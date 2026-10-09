@@ -250,8 +250,8 @@ function repairPairs(tokens: Token[], words: Word[]) {
 const overlapsY = (a: { y0: number; y1: number }, b: { y0: number; y1: number }) => Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
 
 /** `to: null` drops the line. `kinds` says why it changed: redaction, portion, banner, counter, slug. */
-type Edit = { line: number; from: string; to: string | null; kinds: string[] };
-type Insert = { after: number; text: string };
+type Edit = { line: number; from: string; to: string | null; kinds: string[]; remove?: true };
+type Insert = { after: number; text: string; kind?: string };
 type PageRecord = { page: number; boxes: number[][]; edits: Edit[]; inserts: Insert[]; unpaired: number };
 
 function processPage(page: number, lines: string[]): PageRecord {
@@ -380,17 +380,27 @@ function processPage(page: number, lines: string[]): PageRecord {
   const current = (line: number) => text.get(line) ?? lines[line];
 
   // Portion markings: "(U)", "(S//NF)", "(TS//█//NF)" opening a paragraph. Classification control
-  // markings, all struck through on declassification; the redacted ones read as garble.
+  // markings, all struck through on declassification; the redacted ones read as garble. A marked
+  // paragraph sets its marking at the margin where an unmarked one indents its first line, so the
+  // paragraph is given the page's usual first-line indent in its place: read as what it is, a
+  // paragraph opening, not a line at an odd inset (which reads as a quotation).
+  const indents = new Map<number, number>();
+  lines.forEach((l, i) => {
+    const lead = l.length - l.trimStart().length;
+    if (l.trim() && i > 0 && !lines[i - 1].trim() && lead >= 8 && lead <= 45) indents.set(lead, (indents.get(lead) ?? 0) + 1);
+  });
+  const usual = [...indents].sort((a, b) => b[1] - a[1])[0];
+  const opening = (lead: string) => (usual && usual[1] >= 2 ? " ".repeat(usual[0]) : lead);
   lines.forEach((_, line) => {
     const t = current(line);
     const m = /^(\s*)\(([^()]{0,45})\)\s+(?=\S)/.exec(t);
     if (m && isPortion(m[2])) {
-      text.set(line, m[1] + t.slice(m[0].length));
+      text.set(line, opening(m[1]) + t.slice(m[0].length));
       why(line, "portion");
     } else if (portionGaps.has(line)) {
       const g = new RegExp(`^(\\s*)${MARK}\\s+(?=[A-Z"'\u201c])`).exec(t);
       if (g) {
-        text.set(line, g[1] + t.slice(g[0].length));
+        text.set(line, opening(g[1]) + t.slice(g[0].length));
         why(line, "portion");
       }
     }
@@ -458,8 +468,96 @@ function processPage(page: number, lines: string[]): PageRecord {
       why(line, "banner");
     }
   }
+  // Note numbers the OCR lost: a note that opens on a redacted cable's station ("86 █ 10005 (092316Z
+  // APR 02)") prints its number as a tiny superscript against the box, and the layer has no number
+  // (PDF p.54, notes 86 and 88). A line in the notes' size that opens on a box set where a note's text
+  // starts, not under a number line, opens a note; its number is the next in the page's sequence, from
+  // the numbers the layer did read. Inserted as the layer prints the others: alone on a line.
+  const heights = new Map<number, number>();
+  for (const line of textLines) heights.set(line, median(tokens.filter((t) => t.line === line && t.word).map((t) => pt(t.word!.y1 - t.word!.y0))));
+  const firstX = (line: number) => {
+    const t = tokens.find((u) => u.line === line && u.word);
+    return t ? pt(t.word!.x0) : undefined;
+  };
+  const numberLine = (line: number) => /^\s*\d{1,4}\s*$/.test(lines[line]) && (heights.get(line) ?? 99) < 6.5;
+  const noteLines = textLines.filter((l) => (heights.get(l) ?? 99) < 8.6 && !drop.has(l));
+  const noteMargin = Math.min(...textLines.filter(numberLine).map((l) => firstX(l)!).filter((x) => x !== undefined), Infinity);
+  if (Number.isFinite(noteMargin)) {
+    type Start = { line: number; n?: number; misread?: boolean };
+    const starts: Start[] = [];
+    // A raised number the OCR read as letters ("so" for 50): short, raised, at the note margin.
+    const misreadNumber = (line: number) =>
+      !numberLine(line) && /^\s*[0-9A-Za-z.,'!|]{1,5}\s*$/.test(lines[line]) && (heights.get(line) ?? 99) < 6.5 && Math.abs((firstX(line) ?? -99) - noteMargin) <= 3;
+    for (const line of [...new Set([...textLines.filter(numberLine), ...textLines.filter(misreadNumber), ...noteLines])].sort((a, b) => a - b)) {
+      if (numberLine(line)) {
+        starts.push({ line, n: Number(lines[line].trim()) });
+        continue;
+      }
+      if (misreadNumber(line)) {
+        starts.push({ line, misread: true });
+        continue;
+      }
+      // where the line starts: its first word, or a box before it
+      const y = yMid(line)!;
+      const xs = [firstX(line), ...boxes.filter((b) => pt(b.y0) - 1 <= y && y <= pt(b.y1) + 1).map((b) => pt(b.x0))].filter((x): x is number => x !== undefined);
+      const startX = Math.min(...xs);
+      if (!(startX >= noteMargin + 5 && startX <= noteMargin + 15)) continue;
+      let prev = line - 1;
+      while (prev >= 0 && !lines[prev].trim()) prev--;
+      if (prev >= 0 && (numberLine(prev) || misreadNumber(prev))) continue;
+      starts.push({ line });
+    }
+    if (process.env.DEBUG_NOTES) process.stderr.write(`p${page} margin ${noteMargin.toFixed(1)} starts ${JSON.stringify(starts)}\n` + noteLines.map((l) => `  ${l} h${heights.get(l)?.toFixed(1)} x${firstX(l)?.toFixed(1)} ${lines[l].trim().slice(0, 50)}`).join("\n") + "\n");
+    // The page's notes are numbered in order, so each start's number is its place on the page plus
+    // one offset. The offset most of the numbers the OCR read agree on (two at least, or the only one)
+    // numbers every start: a lost number is put back, a misread one ("37" between 26 and 28, "so" for
+    // 50, "5" for 51) is corrected.
+    const offsets = new Map<number, number>();
+    starts.forEach((st, k) => st.n !== undefined && offsets.set(st.n - k, (offsets.get(st.n - k) ?? 0) + 1));
+    const known = starts.filter((st) => st.n !== undefined).length;
+    const [offset, votes] = [...offsets].sort((x, y) => y[1] - x[1] || x[0] - y[0])[0] ?? [undefined, 0];
+    if (offset !== undefined && (votes >= 2 || known === 1) && votes * 2 > known) {
+      starts.forEach((st, k) => {
+        const n = k + offset;
+        if (n < 1 || st.n === n) return;
+        if (st.n !== undefined || st.misread) rec.edits.push({ line: st.line, from: lines[st.line], to: lines[st.line].replace(/\S+/, String(n)), kinds: ["note-number"] });
+        else rec.inserts.push({ after: st.line - 1, text: String(n), kind: "note-number" });
+      });
+    }
+  }
+  // Rows of one printed line: a skewed scan puts the start of a line a point or two off its rest, and
+  // the text layer gives them as two rows ("From Abu" over "Zubaydah's capture on March 28, 2002,",
+  // PDF p.75), so the first reads as a line on its own. Consecutive rows whose words sit on the same
+  // baseline (centres within 5.5 pt; lines are 11 pt apart or more) and side by side (the second starts right of the first's end) are
+  // one line: the second's text goes after the first's, and its row is removed.
+  const rowX = (line: number) => {
+    const own = tokens.filter((t) => t.line === line && t.word);
+    return own.length ? { x0: pt(Math.min(...own.map((t) => t.word!.x0))), x1: pt(Math.max(...own.map((t) => t.word!.x1))) } : undefined;
+  };
+  const removed = new Set<number>();
+  for (let line = 0; line + 1 < lines.length; line++) {
+    const next = line + 1;
+    if (drop.has(line) || drop.has(next) || !current(line).trim() || !current(next).trim()) continue;
+    // a raised note number sits above its note's first line's baseline: not one line with it
+    if ([line, next].some((l) => (heights.get(l) ?? 99) < 6.5 && current(l).trim().length <= 5)) continue;
+    const ya = yMid(line);
+    const yb = yMid(next);
+    const xa = rowX(line);
+    const xb = rowX(next);
+    if (ya === undefined || yb === undefined || !xa || !xb || Math.abs(ya - yb) > 5.5) continue;
+    if (xb.x0 < xa.x1 + 1) continue;
+    const a = current(line).trimEnd();
+    const b = current(next);
+    const gap = Math.max(1, (b.length - b.trimStart().length) - a.length);
+    text.set(line, a + " ".repeat(Math.min(gap, 3)) + b.trim());
+    why(line, "rejoin");
+    removed.add(next);
+    why(next, "rejoin");
+    drop.add(next);
+    line = next;
+  }
   for (const line of [...kinds.keys()].sort((a, b) => a - b))
-    rec.edits.push({ line, from: lines[line], to: drop.has(line) ? null : current(line), kinds: [...kinds.get(line)!] });
+    rec.edits.push({ line, from: lines[line], to: drop.has(line) ? null : current(line), kinds: [...kinds.get(line)!], ...(removed.has(line) ? { remove: true } : {}) });
   return rec;
 }
 
@@ -516,6 +614,13 @@ function popplerVersion(): string {
   // pdftotext -v prints to stderr
   const r = spawnSync("pdftotext", ["-v"], { encoding: "utf8" });
   return (r.stderr || r.stdout).split("\n")[0].trim();
+}
+
+/** The last line before `line` with any text, or -1. */
+function prevNonBlank(lines: string[], line: number): number {
+  let k = line - 1;
+  while (k >= 0 && !lines[k].trim()) k--;
+  return k;
 }
 
 function median(xs: number[]): number {

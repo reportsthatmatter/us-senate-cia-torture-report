@@ -1,8 +1,8 @@
 # Fidelity review — Committee Study of the Central Intelligence Agency's Detention and Interrogation Program
 
-Pages: 712  ·  Footnotes: 2307  ·  Auto-fixes applied: 452  ·  Human corrections: 0
+Pages: 712  ·  Footnotes: 2926  ·  Auto-fixes applied: 452  ·  Human corrections: 0
 
-**171 open**, 0 reviewed and judged correct.
+**153 open**, 0 reviewed and judged correct.
 
 OCR suspects below are a **review queue, not errors**. Whether the text is
 faithful to the scan is a human judgement; these are the places most likely
@@ -22,34 +22,29 @@ file under `dismissed:` and the entry leaves this queue for good.
 | likely | digit inside a word | `2d` | Vol 1 · PDF p.1 |  2d Session  |
 | likely | digit inside a word | `DC1A` | Vol 1 · PDF p.69 | ques until April 2006, and at that time DC1A Goss briefed him on the seven EITs prop |
 | likely | digit inside a word | `S1TREP` | Vol 1 · PDF p.116 |  [REDACTED]; cc: █ subject: Re: MEDICAL S1TREP 3/10; date: March 12, 2003, at 2:09:47  |
-| likely | digit inside a word | `2M` | Vol 1 · PDF p.627 | , CIA CABLE █ t o b e r 03, 2002. p. 2. 2M CIA, CIA CABLE 33804, September 19, |
 | likely | stray punctuation inside a word | `certain|ty` | Vol 1 · PDF p.15 | al-Qa'ida and the interrogation team's "certain\|ty]" that Abu Zubaydah was withholding inf |
 | likely | digit inside a word | `4s` | Vol 1 · PDF p.32 | logically, " Refers to the CIA Program /4s a "Train Wreak I sic] Waitin |
-| likely | digit inside a word | `D1RECTO` | Vol 1 · PDF p.40 | l Security Council, re. █ █ █ 10 D1RECTO█ ( █ email fronl:  |
+| likely | digit inside a word | `D1RECTO` | Vol 1 · PDF p.40 | l Security Council, re. █ █ █ 10 D1RECTO█ ( █ email fronl: [REDACT |
 | likely | digit inside a word | `D1R` | Vol 1 · PDF p.50 | c Approach to Successful Interrogation; D1R █(031227Z APR 02).  |
-| likely | digit inside a word | `I2H` | Vol 1 · PDF p.59 | Zubaydah detainee review in Volume III. I2H █ 10424 (070814ZJUN 02)  |
-| likely | digit inside a word | `9I` | Vol 1 · PDF p.71 | g from abdominal surgery at the time." ,9I) █ 10644 (201235Z AUG  |
-| likely | digit inside a word | `Preparedon9Augus` | Vol 1 · PDF p.74 | s well as "Abu Zubaydah Bio" document, "Preparedon9Augus^006." 2,6 On August 30, 2002, █  |
-| likely | digit inside a word | `2SI` | Vol 1 · PDF p.81 | f the Daily DCI Operations Update.259 2SI ALEC █ 162135Z JUL 02). |
+| likely | digit inside a word | `I2H` | Vol 1 · PDF p.59 | ydah detainee review in Volume III. 127 I2H █ 10424 (070814ZJUN 02)  |
+| likely | digit inside a word | `9I` | Vol 1 · PDF p.71 | g from abdominal surgery at the time." ,9I) 190 █ 10644 (201235Z  |
+| likely | digit inside a word | `Preparedon9Augus` | Vol 1 · PDF p.74 | s well as "Abu Zubaydah Bio" document, "Preparedon9Augus^006." 216 On August 30, 2002, █  |
 | likely | digit inside a word | `1CRC` | Vol 1 · PDF p.82 | he concealment of the facility from the 1CRC, military participation in al-Najjar's  |
 | likely | stray punctuation inside a word | `ni|in` | Vol 1 · PDF p.86 | errogations for I Ii il I ni\|in i █ May 8, 2003.) Inspe |
 | likely | digit inside a word | `1AR` | Vol 1 · PDF p.121 | Z MAR 03) ] 10942(2216102^1AR 03), disseminated as █ █  |
 | likely | digit inside a word | `9Z` | Vol 1 · PDF p.122 | 8 (171505Z JUL 03); III! II III! █ r r "9Z JUN 03),disseminated as █ █ 39239 (3016 |
-| likely | digit inside a word | `5fil` | Vol 1 · PDF p.126 |  DIRECTOR █ (040049Z MAR 03) 5fil [REDACTED] 60040 █ 562 HEADQU |
 | likely | digit inside a word | `C1AJ` | Vol 1 · PDF p.139 |  further intelligence value for (thc C1AJ and should more properly be turned  |
 | likely | digit inside a word | `6M` | Vol 1 · PDF p.146 | K j Curriculum, November 2,2002, at 17. 6M H V T Training and Curriculum, November |
 | likely | digit inside a word | `enhancecHntem5gation` | Vol 1 · PDF p.151 |  in advocating for the use of the CIA's enhancecHntem5gation techniques, claiming that bin Attash wa |
 | likely | stray punctuation inside a word | `Regarding;OIG` | Vol 1 · PDF p.155 | TED], [REDACTED]; subject: DCI Question Regarding;OIG Report; January 28, 2005. 743 Email |
-| likely | digit inside a word | `7FIS` | Vol 1 · PDF p.159 | █ █ AN 04) 7FIS 54194  |
+| likely | digit inside a word | `7FIS` | Vol 1 · PDF p.159 |  AN 04) 765 7FIS 54194 █IAN 04); █  |
 | likely | digit inside a word | `countei1errorism` | Vol 1 · PDF p.160 | w forthcoming he was." (See www.cfr.org/countei1errorism/film-screening-manhunt/p30560.) Given t |
 | likely | digit inside a word | `5e` | Vol 1 · PDF p.191 |  █, Chief, █ █ 992 5e<?October 23, 2006, Memorandum for Direc |
 | likely | digit inside a word | `E1T` | Vol 1 · PDF p.196 | tion and Reinstatement of Walling as an E1T, and Memorandum from █ █ t o Director,  |
 | likely | digit inside a word | `i0Lh` | Vol 1 · PDF p.199 | esentatives Roll Call Vote 117 of the 1 i0Lh Congress, Second Session, March 11, 200 |
 | likely | digit inside a word | `I8FEB` | Vol 1 · PDF p.202 |  "Tab 9: DCIA Briefing on RDI Program- I8FEB.2009" and graphic attachment, "Key Inte |
-| likely | digit inside a word | `I0M` | Vol 1 · PDF p.209 | ould eliminate any criminal liability." I0M Email from: [REDACTED]; to: █ and  |
 | likely | digit inside a word | `1AJJO` | Vol 1 · PDF p.213 | tions were almost entirelyJ 1AJJO inaccurate. 1084 Email from: Joh |
 | likely | digit inside a word | `1Z` | Vol 1 · PDF p.217 | CTOR █ 1 7 5 6 Z APR 02); ALEC █ (16182.1Z JUL 03^A1-Hawsawi's arrest on March 1,  |
-| likely | digit inside a word | `l2W` | Vol 1 · PDF p.238 | IA's enhanced interrogation techniques. l2W ALEC █ (181439Z OCT 02) 1 |
 | likely | digit inside a word | `C1A` | Vol 1 · PDF p.242 |  to cover memorandum with the title, "D/C1A Conference Room Seating Visit by Presid |
 | likely | digit inside a word | `8FEB` | Vol 1 · PDF p.247 |  " ' " ' 8FEB.2009" and graphic  |
 | likely | digit inside a word | `D1A` | Vol 1 · PDF p.264 | Padilla of 8 June 02 ['CIA Summary']; a D1A Info Memo from █ (11/13/03); and an FBI |
@@ -58,13 +53,10 @@ file under `dismissed:` and the entry leaves this queue for good.
 | likely | digit inside a word | `subieOj3altimoreboy` | Vol 1 · PDF p.311 |  DETENTION SITE BLUE]; subieOj3altimoreboy and KSM; date: 15 March 2003, at 07:08: |
 | likely | digit inside a word | `7Z` | Vol 1 · PDF p.314 |  in Volume II, including: ALEC █ (V 121^7Z JUN 03); █ 19907 (2317 |
 | likely | digit inside a word | `6pm` | Vol 1 · PDF p.323 | e: Profile on Saajid Badat for coord by 6pm, 19 October 2005; date: October 19, 200 |
-| likely | digit inside a word | `l7M` | Vol 1 · PDF p.334 |  in Volume II for detailed infonnation. l7M See United States Court of Appeal |
 | likely | digit inside a word | `i8is` | Vol 1 · PDF p.353 |  112207 (050524Z SEP 02) i8is wjjjie [ ( i s u n c iear from CIA reco |
-| likely | digit inside a word | `8M` | Vol 1 · PDF p.355 | aptured Khalid Sheikh Mohammed,"1834 ,8M ALEC█11551ZSEP02) 1830 CI |
 | likely | digit inside a word | `2iA` | Vol 1 · PDF p.364 | nt "revealed a personal website 1886 <2iA Memorandum for the Record, "Review of I |
 | likely | digit inside a word | `1A` | Vol 1 · PDF p.382 |  multiple addresses; subject: "Draft of 1A on 'Detainee Reporting Pivotal to the W |
 | likely | digit inside a word | `4Z` | Vol 1 · PDF p.392 | ubaydah's reporting, see ALEC █ 1 0 1 5 4Z JAN 03); █ DIRECTOR! (172117Z SEP 02);  |
-| likely | digit inside a word | `2IM` | Vol 1 · PDF p.402 | es, on Rabi'a's training of operatives. 2IM Ghul explained that he was in Shka |
 | likely | digit inside a word | `ReJ3rokaw` | Vol 1 · PDF p.432 |  █ █ █ [ R E D A C T E █ subject\|ReJ3rokaw interview: Take one; date: April 13, 20 |
 | likely | stray punctuation inside a word | `subject|ReJ` | Vol 1 · PDF p.432 |  █ █ █ [ R E D A C T E █ subject\|ReJ3rokaw interview: Take one; date: April  |
 | likely | stray punctuation inside a word | `re|itei` | Vol 1 · PDF p.438 |  described elsewhere in this summa^an^i^re\|itei^etm me II.  |
@@ -76,20 +68,10 @@ file under `dismissed:` and the entry leaves this queue for good.
 | likely | digit inside a word | `SW1GERT` | Vol 1 · PDF p.500 |  email from: [REDACTED]; subject: "Re: [SW1GERT and DUNBAR]"; date: August 21,2002, at  |
 | likely | digit inside a word | `7NOFORN` | Vol 1 · PDF p.505 |  /7NOFORN DIRECTOR HAYDEN: "What  |
 | likely | digit inside a word | `2hl` | Vol 1 · PDF p.509 | █ [Business Q] █ .2hl''  |
-| likely | digit inside a word | `1J` | Vol 1 · PDF p.558 | ive Summary, December 3, 2014, p. 7011 1J SSCI Study, Volume I, March 31, 201 |
-| likely | digit inside a word | `2B` | Vol 1 · PDF p.562 | utive Summary, December 3,2014, p. 315. 2B See DCIA Talking Points: Waterboard, |
-| likely | digit inside a word | `3C` | Vol 1 · PDF p.563 | olume III, March 31, 2014, pp. 282-283. 3C SSCI Study, Executive Summary. Decem |
-| likely | digit inside a word | `9S` | Vol 1 · PDF p.573 | nd Conclusions, December 3, 2014, p. 6. 9S See SSCI Study. Executive Summary,  |
-| likely | digit inside a word | `2b` | Vol 1 · PDF p.592 | d day out, to follow up on every one. 2b In 2004, the SSCI was instrumental i |
-| likely | digit inside a word | `7J` | Vol 1 · PDF p.601 | arch 31,2014, p. 1130 (emphasis added). 7J SSCI Study, Executive Summary, Decem |
-| likely | digit inside a word | `I1H` | Vol 1 · PDF p.610 | tive Summary, December 3, 2014, p. 315. I1H SSCI Study, Executive Summary, Dece |
 | likely | digit inside a word | `0J` | Vol 1 · PDF p.611 | u Zubaydah, early in his detention, ,0J See DCIA Talking Points: Waterboard |
 | likely | digit inside a word | `KhallacH3ii` | Vol 1 · PDF p.628 | by A b u Z u b a y d a h in the letter, KhallacH3ii^ttasMHmowiK^  |
-| likely | digit inside a word | `J3J` | Vol 1 · PDF p.630 |  SSCI Study, Volume II, p. 983 n.4387. J3J CIA. WASHINGTON DC █  |
-| likely | digit inside a word | `3i` | Vol 1 · PDF p.639 | █ 302 See CIA, CIA WASHINGTON DC █ 3i>: SSCI Study, Executive Summary, D |
-| likely | digit inside a word | `3S` | Vol 1 · PDF p.649 | a target of sustained terrorist focus. 3S " SSCI Study, Executive Summary, Dece |
+| likely | digit inside a word | `3i` | Vol 1 · PDF p.639 | █ 302 See CIA, CIA WASHINGTON DC █ 3i>: 303 SSCI Study, Executive Summar |
 | likely | digit inside a word | `4B` | Vol 1 · PDF p.660 | tive Summary, December 3, 2014, p. 442. 4B Letter from David Shedd to Andy Joh |
-| likely | digit inside a word | `5tw` | Vol 1 · PDF p.676 | tive Summary, December 3, 2014, p. 417, 5tw The referenced statement was issued |
 | likely | stray punctuation inside a word | `Ri!pHf` | Vol 1 · PDF p.696 |  █ Shkafvalle^s^i satehave»Ho^Ri!pHf^mcn!s^ befor |
 | likely | stray punctuation inside a word | `modern!zation` | Vol 1 · PDF p.703 | t o support i t in the name of modern!zation. Therefore, we are very keen t |
 | possible | possible rn/m confusion | `concerns` | Vol 1 · PDF p.16 |  program and written letters expressing concerns to CIA Director Michael Hayden, Directo |
@@ -166,7 +148,7 @@ file under `dismissed:` and the entry leaves this queue for good.
 | possible | possible rn/m confusion | `discerned` | Vol 1 · PDF p.402 | ined for an ongoing operation.2102 Ghul discerned from the training and Rabi'a's statemen |
 | possible | case break inside a word | `inIr` | Vol 1 · PDF p.404 | n Zarqawi's plots; in inIraq 2119 I █ 12831  |
 | possible | case break inside a word | `fVo` | Vol 1 · PDF p.434 | r 15, 2005, at 02:04 PM. 22so g m a j \| fVom: █ to: █ John |
-| possible | case break inside a word | `ofLe` | Vol 1 · PDF p.449 | ting Assistant Attorney General, Office ofLegalCounsel, May 4, 2005. 2355 Lette |
+| possible | case break inside a word | `ofLe` | Vol 1 · PDF p.449 | ting Assistant Attorney General, Office ofLegalCounsel, May 4, 2005. 2359 Lette |
 | possible | case break inside a word | `alHi` | Vol 1 · PDF p.451 | ENTION SITE COBALT were "blacked out at alHime^ising curtains plus painted exterior  |
 | possible | possible rn/m confusion | `Farnj` | Vol 1 · PDF p.490 |  interrogation techniques. 114 Abu Farnj al-Libi █ 0 |
 | possible | case break inside a word | `acUi` | Vol 1 · PDF p.505 | o the interrogator to know whaUf^oncret^acUindwhat is good analysis, " (See  |
@@ -177,7 +159,7 @@ file under `dismissed:` and the entry leaves this queue for good.
 | possible | possible rn/m confusion | `governance` | Vol 1 · PDF p.529 | story of the breakdown in our system of governance that allowed the country to deviate, in |
 | possible | case break inside a word | `ndCo` | Vol 1 · PDF p.580 | TS 2006-2793. wi .SSCI Study, FimUng^ndConclusions, December 3, 2014, p. 8. I4 1  |
 | possible | possible rn/m confusion | `tarnished` | Vol 1 · PDF p.590 | s. It would be a shame if this incident tarnished the reputation of the Committee or the  |
-| possible | case break inside a word | `iMa` | Vol 1 · PDF p.601 | fra, p. 22. 73 SSCI Study, Volume 1. iMarch 31,2014, p. 1130 (emphasis added). 7 |
+| possible | case break inside a word | `iMa` | Vol 1 · PDF p.601 | , p. 22. 73 72 SSCI Study, Volume 1. iMarch 31,2014, p. 1130 (emphasis added). 7 |
 | possible | case break inside a word | `ofTh` | Vol 1 · PDF p.633 | , Zubair was detained by the Government ofThailand. █ Zubair on |
 | possible | possible rn/m confusion | `unconcerned` | Vol 1 · PDF p.637 | pe."283 Far from suggesting the CIA was unconcerned about the al-Ghuraba group, this report |
 | possible | case break inside a word | `ffTh` | Vol 1 · PDF p.681 | gs and Conclusions, April 3.2014. p. 8. ffThis factual error and misrepresentation o |

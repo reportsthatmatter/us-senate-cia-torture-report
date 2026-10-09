@@ -1,5 +1,5 @@
 import { redactionBoxes } from "./redactions.ts";
-import { layoutPageJoins, layoutMarkers, pageBreakContinuations, foliosInStep, pipeline, sequencedNoteOpenings, romanFolios, contentsOutline, escapeLeadingHash } from "@rtm/ingest";
+import { layoutPageJoins, layoutMarkers, pageBreakContinuations, foliosInStep, pipeline, sequencedNoteOpenings, romanFolios, contentsOutline, escapeLeadingHash, noteFaceRunOver } from "@rtm/ingest";
 
 /**
  * How this report is built. Owned by the report: every decision that shaped
@@ -21,7 +21,7 @@ export default pipeline({
     // classification banners, portion markings, "Page 21 of 499" and GPO slugs come off (PDF p.51).
     redactionBoxes({
       dir: import.meta.dirname,
-      pack: { path: "reference/redactions.json.gz", sha256: "d39c0df21d8647811606592e00a1b52ef6b68c9c95b59de28fc2751f34945b2c" },
+      pack: { path: "reference/redactions.json.gz", sha256: "33ea012afa1b204daffca0efae288a54014f2e4b35f2f9190797c6eb646cf2d7" },
       pdfSha256: "4989f2fb14509322dfb22d3e90ed5b569bc653aba25826da7adb8da7c8090bb3",
     }),
     layoutPageJoins({ scanned: true }),
@@ -31,6 +31,7 @@ export default pipeline({
     sequencedNoteOpenings(),
     romanFolios(),
     contentsOutline({ ocr: true }),
+    noteFaceRunOver(),
     escapeLeadingHash(),
   ],
 });
