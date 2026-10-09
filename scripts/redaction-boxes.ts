@@ -507,7 +507,6 @@ function processPage(page: number, lines: string[]): PageRecord {
       if (prev >= 0 && (numberLine(prev) || misreadNumber(prev))) continue;
       starts.push({ line });
     }
-    if (process.env.DEBUG_NOTES) process.stderr.write(`p${page} margin ${noteMargin.toFixed(1)} starts ${JSON.stringify(starts)}\n` + noteLines.map((l) => `  ${l} h${heights.get(l)?.toFixed(1)} x${firstX(l)?.toFixed(1)} ${lines[l].trim().slice(0, 50)}`).join("\n") + "\n");
     // The page's notes are numbered in order, so each start's number is its place on the page plus
     // one offset. The offset most of the numbers the OCR read agree on (two at least, or the only one)
     // numbers every start: a lost number is put back, a misread one ("37" between 26 and 28, "so" for
@@ -555,6 +554,18 @@ function processPage(page: number, lines: string[]): PageRecord {
     why(next, "rejoin");
     drop.add(next);
     line = next;
+  }
+  // The front matter's roman folios, which the OCR reads as "in", "Vlll", "xxvii" for xii: the GPO
+  // numbers PDF p.2 to p.29 continuously, i to xxviii, so each page's folio is its place (as
+  // foliosInStep does for arabic folios). Only a line already reading as a folio is touched.
+  if (page >= 3 && page <= 29) {
+    const last = [...lines.keys()].filter((l) => current(l).trim() && !drop.has(l)).slice(-3).reverse();
+    const folio = last.find((l) => /^\(?[ivxlcIVXLC1l|]{1,7}\)?$|^in$/.test(current(l).trim()));
+    if (folio !== undefined && current(folio).trim() !== roman(page - 1)) {
+      const t = current(folio);
+      text.set(folio, t.slice(0, t.length - t.trimStart().length) + roman(page - 1));
+      why(folio, "folio");
+    }
   }
   for (const line of [...kinds.keys()].sort((a, b) => a - b))
     rec.edits.push({ line, from: lines[line], to: drop.has(line) ? null : current(line), kinds: [...kinds.get(line)!], ...(removed.has(line) ? { remove: true } : {}) });
@@ -614,6 +625,14 @@ function popplerVersion(): string {
   // pdftotext -v prints to stderr
   const r = spawnSync("pdftotext", ["-v"], { encoding: "utf8" });
   return (r.stderr || r.stdout).split("\n")[0].trim();
+}
+
+/** Lower-case roman numerals, for front-matter folios. */
+function roman(n: number): string {
+  const parts: Array<[number, string]> = [[40, "xl"], [10, "x"], [9, "ix"], [5, "v"], [4, "iv"], [1, "i"]];
+  let out = "";
+  for (const [v, r] of parts) while (n >= v) (out += r), (n -= v);
+  return out;
 }
 
 /** The last line before `line` with any text, or -1. */

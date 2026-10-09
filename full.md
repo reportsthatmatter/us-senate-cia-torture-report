@@ -75,13 +75,15 @@ Thank you very much for your support of the Committee's study of this program.
 
 - Minority Views of Senators Risch, Coats, and Rubio — 682
 
-(ii)
+ii
+
+%%page iii%%
 
 Foreword by Senate Select Committee on Intelligence Chairman Bianne Feinstein
 
 > Approved December 13, 2012 Updatedfor Release April 3, 2014 Declassification Revisions December 3, 2014
 
-in
+%%page iv%%
 
 ## Foreword
 
@@ -139,6 +141,8 @@ As noted previously, the Committee approved the Terms of Reference for the Study
 
 The 2008 review was complicated by the existence of a Department of Justice investigation, opened by Attorney General Michael Mukasey, into the destruction of the videotapes and expanded by Attorney General Holder in August 2009. In particular, CIA employees and contractors who would otherwise have been interviewed by the Committee staff were under potential legal jeopardy, and therefore the CIA would not compel its workforce to appear before the Committee. This constraint lasted until the Committee's research and documentary review were completed and the Committee Study had largely been finalized.
 
+%%page viii%%
+
 Furthermore, given the volume and internal nature of relevant CIA documents, the CIA insisted that the Committee enter into an arrangement where our staff would reviewulocuments and conduct research at a CIA-leased facility █
 
 █ rathe than at the Committee's offices on Capitol Hill.
@@ -153,8 +157,6 @@ The Committee Study, including the now-declassified Executive Summary and Findin
 
 Finally, I want to recognize the members of the staff who have endured years of long hours poring through the difficult details of one of the lowest points in our nation's history. They have produced the most significant and comprehensive oversight report in the Committee's history, and perhaps in that of the U.S. Senate, and their contributions should be recognized and praised.
 
-Vlll
-
 %%page ix%%
 
 Daniel Jones has managed and led the Committee's review effort from its inception. Dan has devoted more than six years to this effort, has personally written thousands of its pages, and has been integrally involved in every Study decision. Evan Gottesman, Chad Tanner, and Alissa Starzak have also played integral roles in the Committee Study and have spent considerable years researching and drafting specific sections of the Committee Study.
@@ -163,13 +165,13 @@ Other Committee staff members have also assisted in the review and provided valu
 
 Dianne Feinstein Chairman Senate Select Committee on Intelligence
 
+%%page x%%
+
 ## Findings; and Conclusions
 
 > Approved December 13, 2012 Updated for Release April 3, 2014 Declassification Revisions December 3, 2014
 
-X
-
-%%page xxvii%%
+%%page xi%%
 
 The Committee makes the following findings and conclusions:
 
@@ -189,6 +191,8 @@ The CIA represented to the White House, the National Security Council, the Depar
 
 The Committee reviewed 20 of the most frequent and prominent examples of purported counter-terrorism successes that the CIA has attributed to the use of its enhanced interrogation techniques, and found them to be wrong in fundamental respects. In some cases, there was no relationship between the cited counterterrorism success and any information provided by detainees during or after the use of the CIA's enhanced interrogation techniques. In the remaining cases, the CIA inaccurately claimed that specific, otherwise unavailable information was acquired from a CIA detainee "as a result" of the CIA's enhanced interrogation techniques, when in fact the information was either: (1) corroborative of information already available to the CIA or other elements of the U.S. Intelligence Community from sources other than the CIA detainee, and was therefore not "otherwise unavailable"; or (2) acquired from the CIA detainee prior to the use of the CIA's enhanced interrogation techniques. The examples provided by the CIA included numerous factual inaccuracies.
 
+%%page xii%%
+
 In providing the "effectiveness" examples to policymakers, the Department of Justice, and others, the CIA consistently omitted the significant amount of relevant intelligence obtained from sources other than CIA detainees who had been subjected to the CIA's enhanced interrogation techniques—leaving the false impression the CIA was acquiring unique information from the use of the techniques.
 
 Some of the plots that the CIA claimed to have "disrupted" as a result of the CIA's enhanced interrogation techniques were assessed by intelligence and law enforcement officials as being infeasible or ideas that were never operationalized.
@@ -201,9 +205,9 @@ The waterboarding technique was physically harmful, inducing convulsions and vom
 
 Sleep deprivation involved keeping detainees awake for up to 180 hours, usually standing or in stress positions, at times with their hands shackled above their heads. At least five detainees experienced disturbing hallucinations during prolonged sleep deprivation and, in at least two of those cases, the CIA nonetheless continued the sleep deprivation.
 
-Contrary to CIA representations to the Department of Justice, the CIA instructed personnel that the interrogation of Abu Zubaydah would take "precedence" over his medical care,6 resulting in the deterioration of a bullet wound Abu Zubaydah incurred during his capture. In at least two other cases, the CIA used its enhanced interrogation techniques despite warnings from CIA medical personnel that the techniques could exacerbate physical injuries. CIA medical personnel
+Contrary to CIA representations to the Department of Justice, the CIA instructed personnel that the interrogation of Abu Zubaydah would take "precedence" over his medical care,6 resulting in the deterioration of a bullet wound Abu Zubaydah incurred during his capture. In at least two other cases, the CIA used its enhanced interrogation techniques despite warnings from CIA medical personnel that the techniques could exacerbate physical injuries. CIA medical personnel treated at least one detainee for swelling in order to allow the continued use of standing sleep deprivation.
 
-Xll treated at least one detainee for swelling in order to allow the continued use of standing sleep deprivation.
+%%page xiii%%
 
 At least five CIA detainees were subjected to "rectal rehydration" or rectal feeding without documented medical necessity. The CIA placed detainees in ice water "baths." The CIA led several detainees to believe they would never be allowed to leave CIA custody alive, suggesting to one detainee that he would only leave in a coffin-shaped box.7 One interrogator told another detainee that he would never go to court, because "we can never let the world know what I have done to you."8 CIA officers also threatened at least three detainees with harm to their families— to include threats to harm the children of a detainee, threats to sexually abuse the mother of a detainee, and a threat to "cut [a detainee's] mother's throat."9
 
@@ -219,7 +223,9 @@ Throughout the program, multiple CIA detainees who were subjected to the CIA's e
 
 #5: The CIA repeatedly provided inaccurate information to the Department of Justice, impeding a proper legal analysis of the CIA's Detention and Interrogation Program.
 
-From 2002 to 2007, the Office of Legal Counsel (OLC) within the Department of Justice relied on CIA representations regarding: (1) the conditions of confinement for detainees, (2) the xlll application of the CIA's enhanced interrogation techniques, (3) the physical effects of the techniques on detainees, and (4) the effectiveness of the techniques. Those representations were inaccurate in material respects.
+From 2002 to 2007, the Office of Legal Counsel (OLC) within the Department of Justice relied on CIA representations regarding: (1) the conditions of confinement for detainees, (2) the application of the CIA's enhanced interrogation techniques, (3) the physical effects of the techniques on detainees, and (4) the effectiveness of the techniques. Those representations were inaccurate in material respects.
+
+%%page xiv%%
 
 The Department of Justice did not conduct independent analysis or verification of the information it received from the CIA. The department warned, however, that if the facts provided by the CIA were to change, its legal conclusions might not apply. When the CIA determined that information it had provided to the Department of Justice was incorrect, the CIA rarely informed the depaitment.
 
@@ -233,11 +239,9 @@ In March 2005, the CIA submitted to the Department of Justice various examples o
 
 #6: The CIA has actively avoided or impeded congressional oversight of the program.
 
-The CIA did not brief the leadership of the Senate Select Committee on Intelligence on the CIA's enhanced interrogation techniques until September 2002, after the techniques had been approved and used. The CIA did not respond to Chairman Bob Graham's requests for additional information in 2002, noting in its own internal communications that he would be leaving the Committee in January 2003. The CIA subsequently resisted efforts by Vice Chairman John D. XiV
+The CIA did not brief the leadership of the Senate Select Committee on Intelligence on the CIA's enhanced interrogation techniques until September 2002, after the techniques had been approved and used. The CIA did not respond to Chairman Bob Graham's requests for additional information in 2002, noting in its own internal communications that he would be leaving the Committee in January 2003. The CIA subsequently resisted efforts by Vice Chairman John D. Rockefeller IV, to investigate the program, including by refusing in 2006 to provide requested documents to the full Committee.
 
-%%page xxvii#2%%
-
-Rockefeller IV, to investigate the program, including by refusing in 2006 to provide requested documents to the full Committee.
+%%page xv%%
 
 The CIA restricted access to information about the program from members of the Committee beyond the chairman and vice chairman until September 6, 2006, the day the president publicly acknowledged the program, by which time 117 of the 119 known detainees had already entered CIA custody. Until then, the CIA had declined to answer questions from other Committee members that related to CIA interrogation activities.15
 
@@ -253,6 +257,8 @@ According to CIA records, no CIA officer, up to and including CIA Directors Geor
 
 At the direction of the White House, the secretaries of state and defense - both principals on the National Security Council - were not briefed on program specifics until September 2003. An internal CIA email from July 2003 noted that "... the WH [White House] is extremely concerned [Secretary] Powell would blow his stack if he were to be briefed on what's been going on."19 Deputy Secretary of State Armitage complained that he and Secretary Powell were "cut out" of the National Security Council coordination process.20
 
+%%page xvi%%
+
 The CIA repeatedly provided incomplete and inaccurate information to White House personnel regarding the operation and effectiveness of the CIA's Detention and Interrogation Program. This includes the provision of inaccurate statements similar to those provided to other elements of the U.S. Government and later to the public, as well as instances in which specific questions from White House officials were not answered truthfully or fully. In briefings for the National Security Council principals and White House officials, the CIA advocated for the continued use of the CIA's enhanced interrogation techniques, warning that "[t]ermination of this program will result in loss of life, possibly extensive."21
 
 #8: The CIA's operation and management of the program complicated, and in some cases impeded, the national security missions of other Executive Branch agencies.
@@ -263,9 +269,9 @@ The use of coercive interrogation techniques and covert detention facilities tha
 
 The CIA blocked State Department leadership from access to information crucial to foreign policy decision-making and diplomatic activities. The CIA did not inform two secretaries of state of locations of CIA detention facilities, despite the significant foreign policy implications related to the hosting of clandestine CIA detention sites and the fact that the political leaders of host countries were generally informed of their existence. Moreover, CIA officers told U.S. ambassadors not to discuss the CIA program with State Department officials, preventing the ambassadors from seeking guidance on the policy implications of establishing CIA detention facilities in the countries in which they served.
 
-In two countries, U.S. ambassadors were informed of plans to establish a CIA detention site in the countries where they were serving after the CIA had already entered into agreements with the
+In two countries, U.S. ambassadors were informed of plans to establish a CIA detention site in the countries where they were serving after the CIA had already entered into agreements with the countries to host the detention sites. In two other countries where negotiations on hosting new CIA detention facilities were taking place,22 the CIA told local government officials not to inform the U.S. ambassadors.23
 
-XVl countries to host the detention sites. In two other countries where negotiations on hosting new CIA detention facilities were taking place,22 the CIA told local government officials not to inform the U.S. ambassadors.23
+%%page xvii%%
 
 The ODNI was provided with inaccurate and incomplete information about the program, preventing the director of national intelligence from effectively carrying out the director's statutory responsibility to serve as the principal advisor to the president on intelligence matters. The inaccurate information provided to the ODNI by the CIA resulted in the ODNI releasing inaccurate information to the public in September 2006.
 
@@ -281,7 +287,9 @@ In 2005, CIA Director Goss requested in writing that the inspector general not i
 
 The CIA's Office of Public Affairs and senior CIA officials coordinated to share classified information on the CIA's Detention and Interrogation Program to select members of the media to counter public criticism, shape public opinion, and avoid potential congressional action to restrict the CIA's detention and interrogation authorities and budget. These disclosures occurred when the program was a classified covert action program, and before the CIA had briefed the full Committee membership on the program.
 
-The deputy director of the CIA's Counterterrorism Center wrote to a colleague in 2005, shortly before being interviewed by a media outlet, that "we either get out and sell, or we get hammered, which has implications beyond the media. [C]ongress reads it, cuts our authorities, messes up xvll our budget... we either put out our story or we get eaten. [T]here is no middle ground."24 The same CIA officer explained to a colleague that "when the [Washington Post]/[New York T]imes quotes 'senior intelligence official,' it's us... authorized and directed by opa [CIA's Office of Public Affairs]."25
+The deputy director of the CIA's Counterterrorism Center wrote to a colleague in 2005, shortly before being interviewed by a media outlet, that "we either get out and sell, or we get hammered, which has implications beyond the media. [C]ongress reads it, cuts our authorities, messes up our budget... we either put out our story or we get eaten. [T]here is no middle ground."24 The same CIA officer explained to a colleague that "when the [Washington Post]/[New York T]imes quotes 'senior intelligence official,' it's us... authorized and directed by opa [CIA's Office of Public Affairs]."25
+
+%%page xviii%%
 
 Much of the information the CIA provided to the media on the operation of the CIA's Detention and Interrogation Program and the effectiveness of its enhanced interrogation techniques was inaccurate and was similar to the inaccurate information provided by the CIA to the Congress, the Department of Justice, and the White House.
 
@@ -295,9 +303,9 @@ The CIA lacked a plan for the eventual disposition of its detainees. After takin
 
 The CIA did not review its past experience with coercive interrogations, or its previous statement to Congress that "inhumane physical or psychological techniques are counterproductive because they do not produce intelligence and will probably result in false answers."28 The CIA also did not contact other elements of the U.S. Government with interrogation expertise.
 
-In July 2002, on the basis of consultations with contract psychologists, and with very limited internal deliberation, the CIA requested approval from the Department of Justice to use a set of coercive interrogation techniques. The techniques were adapted from the training of U.S. XViii military personnel at the U.S. Air Force Survival, Evasion, Resistance and Escape (SERE) school, which was designed to prepare U.S. military personnel for the conditions and treatment to which they might be subjected if taken prisoner by countries that do not adhere to the Geneva Conventions.
+In July 2002, on the basis of consultations with contract psychologists, and with very limited internal deliberation, the CIA requested approval from the Department of Justice to use a set of coercive interrogation techniques. The techniques were adapted from the training of U.S. military personnel at the U.S. Air Force Survival, Evasion, Resistance and Escape (SERE) school, which was designed to prepare U.S. military personnel for the conditions and treatment to which they might be subjected if taken prisoner by countries that do not adhere to the Geneva Conventions.
 
-%%page xxvii#3%%
+%%page xix%%
 
 As it began detention and interrogation operations, the CIA deployed personnel who lacked relevant training and experience. The CIA began interrogation training more than seven months after taking custody of Abu Zubaydah, and more than three months after the CIA began using its "enhanced interrogation techniques." CIA Director George Tenet issued formal guidelines for interrogations and conditions of confinement at detention sites in January 2003, by which time 40 of the 119 known detainees had been detained by the CIA.
 
@@ -311,7 +319,7 @@ Divergent lines of authority for interrogation activities persisted through at l
 
 The CIA placed individuals with no applicable experience or training in senior detention and interrogation roles, and provided inadequate linguistic and analytical support to conduct effective questioning of CIA detainees, resulting in diminished intelligence. The lack of CIA personnel available to question detainees, which the CIA inspector general referred to as "an ongoing problem,"30 persisted throughout the program.
 
-%%page xxvii#4%%
+%%page xx%%
 
 In 2005, the chief of the CIA's BLACK detention site, where many of the detainees the CIA assessed as "high-value" were held, complained that CIA Headquarters "managers seem to be selecting either problem, underperforming officers, new, totally inexperienced officers or whomever seems to be willing and able to deploy at any given time," resulting in "the production of mediocre or, I dare say, useless intelligence...."31
 
@@ -327,6 +335,8 @@ In 2005, the psychologists formed a company specifically for the purpose of cond
 
 In 2006, the value of the CIA's base contract with the company formed by the psychologists with all options exercised was in excess of $180 million; the contractors received $81 million prior to the contract's termination in 2009. In 2007, the CIA provided a multi-year indemnification agreement to protect the company and its employees from legal liability arising out of the program. The CIA has since paid out more than $1 million pursuant to the agreement.
 
+%%page xxi%%
+
 In 2008, the CIA's Rendition, Detention, and Interrogation Group, the lead unit for detention and interrogation operations at the CIA, had a total of █ positions, which were filled with █ CIA staff officers and █ contractors, meaning that contractors made up 85% of the workforce for detention and interrogation operations.
 
 #14: CIA detainees were subjected to coercive interrogation techniques that had not been approved by the Department of Justice or had not been authorized by CIA Headquarters.
@@ -341,7 +351,7 @@ The CIA never conducted a comprehensive audit or developed a complete and accura
 
 Of the 119 known detainees, at least 26 were wrongfully held and did not meet the detention standard in the September 2001 Memorandum of Notification (MON). These included an "intellectually challenged" man whose CIA detention was used solely as leverage to get a family member to provide information, two individuals who were intelligence sources for foreign liaison services and were former CIA sources, and two individuals whom the CIA assessed to be connected to al-Qa'ida based solely on information fabricated by a CIA detainee subjected to the CIA's enhanced interrogation techniques. Detainees often remained in custody for months after the CIA determined that they did not meet the MON standard. CIA records provide insufficient information to justify the detention of many other detainees.
 
-XXl
+%%page xxii%%
 
 CIA Headquarters instructed that at least four CIA detainees be placed in host country detention facilities because the individuals did not meet the MON standard for CIA detention. The host country had no independent reason to hold the detainees.
 
@@ -355,9 +365,9 @@ Internal assessments of the CIA's Detention and Interrogation Program were condu
 
 In 2005, in response to the recommendation by the inspector general for a review of the effectiveness of each of the CIA's enhanced interrogation techniques, the CIA asked two individuals not employed by the CIA to conduct a broader review of "the entirety o f ' the "rendition, detention and interrogation program."34 According to one individual, the review was "heavily reliant on the willingness of [CIA Counterterrorism Center] staff to provide us with the factual material that forms the basis of our conclusions." That individual acknowledged lacking the requisite expertise to review the effectiveness of the CIA's enhanced interrogation techniques, and concluded only that "the program," meaning all CIA detainee reporting regardless of whether it was connected to the use of the CIA's enhanced interrogation techniques, was a "great success."35 The second reviewer concluded that "there is no objective way to answer the question of efficacy" of the techniques.36
 
-There are no CIA records to indicate that any of the reviews independently validated the "effectiveness" claims presented by the CIA, to include basic confirmation that the intelligence cited by the CIA was acquired from CIA detainees during or after the use of the CIA's enhanced
+There are no CIA records to indicate that any of the reviews independently validated the "effectiveness" claims presented by the CIA, to include basic confirmation that the intelligence cited by the CIA was acquired from CIA detainees during or after the use of the CIA's enhanced interrogation techniques. Nor did the reviews seek to confirm whether the intelligence cited by the CIA as being obtained "as a result" of the CIA's enhanced interrogation techniques was unique and "otherwise unavailable," as claimed by the CIA, and not previously obtained from other sources.
 
-XXii interrogation techniques. Nor did the reviews seek to confirm whether the intelligence cited by the CIA as being obtained "as a result" of the CIA's enhanced interrogation techniques was unique and "otherwise unavailable," as claimed by the CIA, and not previously obtained from other sources.
+%%page xxiii%%
 
 #17: The CIA rarely reprimanded or held personnel accountable for serious and significant violations, inappropriate activities, and systemic and individual management failures.
 
@@ -371,7 +381,9 @@ On two occasions in which the CIA inspector general identified wrongdoing, accou
 
 Critiques, criticisms, and objections were expressed by numerous CIA officers, including senior personnel overseeing and managing the program, as well as analysts, interrogators, and medical officers involved in or supporting CIA detention and interrogation operations.
 
-Examples of these concerns include CIA officers questioning the effectiveness of the CIA's enhanced interrogation techniques, interrogators disagreeing with the use of such techniques against detainees whom they determined were not withholding information, psychologists recommending less isolated conditions, and Office of Medical Services personnel questioning both the effectiveness and safety of the techniques. These concerns were regularly overridden by CIA management, and the CIA made few corrective changes to its policies governing the xxill program. At times, CIA officers were instructed by supervisors not to put their concerns or observations in written communications.
+Examples of these concerns include CIA officers questioning the effectiveness of the CIA's enhanced interrogation techniques, interrogators disagreeing with the use of such techniques against detainees whom they determined were not withholding information, psychologists recommending less isolated conditions, and Office of Medical Services personnel questioning both the effectiveness and safety of the techniques. These concerns were regularly overridden by CIA management, and the CIA made few corrective changes to its policies governing the program. At times, CIA officers were instructed by supervisors not to put their concerns or observations in written communications.
+
+%%page xxiv%%
 
 In several instances, CIA officers identified inaccuracies in CIA representations about the program and its effectiveness to the Office of Inspector General, the White House, the Department of Justice, the Congress, and the American public. The CIA nonetheless failed to take action to correct these representations, and allowed inaccurate information to remain as the CIA's official position.
 
@@ -383,9 +395,7 @@ The CIA required secrecy and cooperation from other nations in order to operate 
 
 Lack of access to adequate medical care for detainees in countries hosting the CIA's detention facilities caused recurring problems. The refusal of one host country to admit a severely ill detainee into a local hospital due to security concerns contributed to the closing of the CIA's detention facility in that country. The U.S. Department of Defense also declined to provide medical care to detainees upon CIA request.
 
-XXlV
-
-%%page xxvii#5%%
+%%page xxv%%
 
 In mid-2003, a statement by the president for the United Nations International Day in Support of Victims of Torture and a public statement by the White House that prisoners in U.S. custody are treated "humanely" caused the CIA to question whether there was continued policy support for the program and seek reauthorization from the White House. In mid-2004, the CIA temporarily suspended the use of its enhanced interrogation techniques after the CIA inspector general recommended that the CIA seek an updated legal opinion from the Office of Legal Counsel. In early 2004, the U.S. Supreme Court decision to grant certiorari in the case of Rasul v. Bush prompted the CIA to move detainees out of a CIA detention facility at Guantanamo Bay, Cuba. In late 2005 and in 2006, the Detainee Treatment Act and then the U.S. Supreme Court decision in Hamdan v. Rumsfeld caused the CIA to again temporarily suspend the use of its enhanced interrogation techniques.
 
@@ -405,11 +415,13 @@ CIA records indicate that the CIA's Detention and Interrogation Program cost wel
 
 To encourage governments to clandestinely host CIA detention sites, or to increase support for existing sites, the CIA provided millions of dollars in cash payments to foreign government officials. CIA Headquarters cncouraged CIA Stations to construct "wish lists" of proposed financial assistance to █ entities of foreign governmental, and to "think big" in terms of that assistance.46
 
-XXVi
+%%page xxvi%%
 
-%%page xxvii#6%%
+%%page xxvii%%
 
 As measured by the number of disseminated intelligence reports. Therefore, zero intelligence reports were disseminated based on information provided by seven of the 39 detainees known to have been subjected to the CIA's enhanced interrogation techniques.
+
+%%page xxviii%%
 
 identifying countries be redacted. The Study therefore lists the countries by letter. The Study uses the same designations consistently, so "Country J," forexample^jefers to the same country throughout the Study.
 
@@ -8370,7 +8382,7 @@ While we generally support efforts to provide the American public with as much i
 
 ## Notes
 
-[^1]: For information on the events at the CIA prior to September 11,2001, see the Final Report of the National Commission on Terrorist Attacks upon the United States (9/11 Commission) and Office of the Inspector General Report on CIA Accountability With Respect to the 9/11 Attacks. IV
+[^1]: For information on the events at the CIA prior to September 11,2001, see the Final Report of the National Commission on Terrorist Attacks upon the United States (9/11 Commission) and Office of the Inspector General Report on CIA Accountability With Respect to the 9/11 Attacks.
 
 [^2]: It is worth repeating that the covert action authorities approved by the President in September 2001 did not provide any authorization or contemplate coercive interrogations.
 
@@ -8456,7 +8468,7 @@ While we generally support efforts to provide the American public with as much i
 
 [^43]: DCIA Talking Points for 12 January 2006 Meeting with the President, re: Way Forward on Counterterrorist Rendition, Detention and Interrogation Program.
 
-[^44]: HEADQUARTERS █ 7 1 7 4 2 Z JUN 04) _ _ _ _ _ [REDACTED] 5759 █ 03); ALEC 03); ALEC 03) xxvill
+[^44]: HEADQUARTERS █ 7 1 7 4 2 Z JUN 04) _ _ _ _ _ [REDACTED] 5759 █ 03); ALEC 03); ALEC 03)
 
 [^2]: The Committee did not have access to approximately 9,400 CIA documents related to the CIA's Detention and Interrogation Program that were withheld by the White House pending a determination and claim of executive privilege. The Committee requested access to these documents over several years, including in writing on January 3, 2013, May 22, 2013, and December 19, 2013. The Committee received no response from the White House.
 
