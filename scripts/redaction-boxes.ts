@@ -398,6 +398,12 @@ function processPage(page: number, lines: string[]): PageRecord {
     if (m && isPortion(m[3])) {
       text.set(line, (m[2] ? m[1] + m[2] : opening(m[1])) + t.slice(m[0].length));
       why(line, "portion");
+    } else if (new RegExp(`^(\\s*)\\(\\s*(?:\\S\\s+)?${MARK}(?:\\s+\\S){0,2}\\s+(?=[A-Z][a-z])`).test(t)) {
+      // the marking's closing parenthesis misread ("( I [box] W j The use of"): one token before the box at
+      // most, two single characters after it, then a capitalised word
+      const g = new RegExp(`^(\\s*)\\(\\s*(?:\\S\\s+)?${MARK}(?:\\s+\\S){0,2}\\s+(?=[A-Z][a-z])`).exec(t)!;
+      text.set(line, opening(g[1]) + t.slice(g[0].length));
+      why(line, "portion");
     } else if (portionGaps.has(line)) {
       const g = new RegExp(`^(\\s*)${MARK}\\s+(?=[A-Z"'\u201c])`).exec(t);
       if (g) {
@@ -622,7 +628,9 @@ function isPortion(inner: string): boolean {
   if (/^S\/\/[A-Z/]{1,12}$/.test(d)) return true;
   if (/^T[S&]/.test(d) && !/[a-z]{3}/.test(d) && /[\/^|█]/.test(d) && d.length <= 30) return true;
   // the marking's middle redacted, its struck-through letters misread: "( █ )", "( ^ S █ i 1 )"
-  return d.includes(MARK) && d.length <= 30 && new RegExp(`^[A-Z0-9/\\\\|^${MARK}&'!;:.,~\\-ilyVvZz]+$`).test(d);
+  if (d.includes(MARK) && d.length <= 30 && new RegExp(`^[A-Z0-9/\\\\|^${MARK}&'!;:.,~\\-ilyVvZz]+$`).test(d)) return true;
+  // any short garble round a box with no run of three lower-case letters: "( r [box] )", "( f [box] F )"
+  return d.includes(MARK) && d.length <= 14 && !/[a-z]{3}/.test(d) && !/\d{3}/.test(d);
 }
 
 /**
