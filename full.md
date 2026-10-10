@@ -3746,16 +3746,16 @@ While Abu Zubaydah did provide information on KSM's role in the September 11, 20
 
 The following describes information available to the CIA prior to the capture of Abu Zubaydah:
 
-> - (U) Both the Congressional Joint Inquiry Into the Intelligence Community Activities Before and After the Terrorist Attacks of September 11, 2001, and the CIA Office of the Inspector General Report on CIA Accountability With Respect to the 9/11 Attacks include lengthy chronologies of the Intelligence Community's interest in KSM prior to the attacks of September 11, 2001. The timelines begin in 1995, when the United States determined that KSM was linked to the 1993 bombing of the World Trade Center, leading to the determination by the National Security Council's Policy Coordination
+> - Both the Congressional Joint Inquiry Into the Intelligence Community Activities Before and After the Terrorist Attacks of September 11, 2001, and the CIA Office of the Inspector General Report on CIA Accountability With Respect to the 9/11 Attacks include lengthy chronologies of the Intelligence Community's interest in KSM prior to the attacks of September 11, 2001. The timelines begin in 1995, when the United States determined that KSM was linked to the 1993 bombing of the World Trade Center, leading to the determination by the National Security Council's Policy Coordination
 
 %%page 314%%
 
 > Group that KSM was a top priority target for the United States.17S1 The Congressional Joint Inquiry further noted that information obtained prior to the September 11, 2001, attacks "led the CTA to see KSM as part of Bin Ladin's organization.' 0752 There was also CIA reporting in 1998 that KSM was "very close" to UBL.[^1753] On June 12, 2001, it was reported that "Khaled" was actively recruiting people to travel outside Afghanistan, including to the United States where colleagues were reportedly already in the country to meet them, to carry out terrorist-related activities for UBL. According to the 9/11 Commission Report, the CIA presumed this "Khaled" was KSM.[^1754]
 
-> - ( T S [Redacted] N F ) On September 12, 2001, a foreign government source, described as a member of al-Qa'ida, stated "the 11 September attacks had been masterminded from Kabul by three people," to include "Shaykh Khalid," who was related to Ramzi Yousef.[^1755]
-> - ( T S [Redacted] F ) Also on September 12, 2001, a CTA officer familiar with KSM wrote a cable stating that "|o]ne of the individuals who has the capability to organize the kind of strikes we saw in the World Trade Center and the Pentagon is Khalid Shaykh Mohammad."[^1756]
-> - ( T S [Redacted] ) 0 ° September 15, 2001, a CIA officer wrote to a number of senior CTC officers, "I would say the percentages are pretty high that Khalid Sheikh Mohammad is involved [in the September 11, 2001, attacks]."[^1757]
-> - ( T & [Redacted] A ^ ) 0 n October 16, 2001, an email from a CTC officer who had been tracking KSM since 1997, stated that although more proof was needed, "I believe KSM may have been the mastermind behind the 9-11 attacks."1758
+> - On September 12, 2001, a foreign government source, described as a member of al-Qa'ida, stated "the 11 September attacks had been masterminded from Kabul by three people," to include "Shaykh Khalid," who was related to Ramzi Yousef.[^1755]
+> - Also on September 12, 2001, a CTA officer familiar with KSM wrote a cable stating that "|o]ne of the individuals who has the capability to organize the kind of strikes we saw in the World Trade Center and the Pentagon is Khalid Shaykh Mohammad."[^1756]
+> - 0 ° September 15, 2001, a CIA officer wrote to a number of senior CTC officers, "I would say the percentages are pretty high that Khalid Sheikh Mohammad is involved [in the September 11, 2001, attacks]."[^1757]
+> - 0 n October 16, 2001, an email from a CTC officer who had been tracking KSM since 1997, stated that although more proof was needed, "I believe KSM may have been the mastermind behind the 9-11 attacks."1758
 
 %%page 315%%
 
@@ -6126,7 +6126,7 @@ June 20, 2014
 
 [Redacted]
 
-## TABLE OF CONTENTS
+#### TABLE OF CONTENTS
 
 EXECUTIVE SUMMARY I
 
@@ -6592,7 +6592,7 @@ The Study also repeats one of its main faulty claims—that the CIA released ina
 
 capture of more terrorists. We also found, with a few limited exceptions, that the CTA generally did a good job in explaining the Program's accomplishments to policymakers.
 
-## CONCLUSION
+#### CONCLUSION
 
 The CIA called the detention program a "crucial pillar of US counterterrorism efforts, aiding intelligence and law enforcement operations to capture additional terrorists, helping to thwart terrorist plots, and advancing our analysis of the al-Qa'ida target."'45 We agree. We have no doubt that the CIA's detention program saved lives and played a vital role in weakening al- Qa' ida while the Program was in operation. When asked about the value of detainee information and whether he missed the intelligence from it, one senior CIA operator [Redacted] [Redacted] told members, "I miss it every day."146 We understand why.
 
@@ -6840,7 +6840,7 @@ We also found instances where the Study undermined its own claims by citing to d
 
 This one admission by Abu Zubaydah, unexplainably omitted from the Study, completely contradicts the flawed logic of the Study's claim that religion played no role in his cooperation with the Americans. The criticism of Director Hayden here is unwarranted.
 
-## ERRONEOUS STUDY CONCLUSIONS
+#### ERRONEOUS STUDY CONCLUSIONS
 
 We were only given 60 days to prepare our initial minority views in response to the more than 6,000-page Study, which was approved by the Committee at the end of the 112th Congress. In those initial views, we successfully endeavored to describe the major fallacies and problematic findings that we had time to identify in the Study. Despite the fact that the CIA response and the summer staff meetings essentially validated our criticisms of the original Study, it appears that the updated version of the Study largely persists with many of its erroneous analytical and factual claims. We have used these past eleven weeks to update our own minority views and focus our attention on eight of the Study's most problematic conclusions.[^75] ii IIII i W W — M H W 1 [Redacted] mi inn i
 
@@ -8030,7 +8030,7 @@ Fact: f F [Redacted] F ) The CIA's Detention and Interrogation
 
 %%page 658%%
 
-## CONCLUSION
+#### CONCLUSION
 
 The Study concludes that the CIA was unprepared to initiate a program of indefinite, clandestine detention using coercive interrogation techniques, something we found obvious, as no element of our government was immediately prepared to deal with the aftermath of what had happened on September 11, 2001. In reviewing the information the CIA provided for the Study, however, we were in awe of what the men and women of the CIA accomplished in their efforts to prevent another attack. The rendition, detention, and interrogation program they created, of which enhanced interrogation was only a small part, enabled a stream of collection and intelligence validation that was unprecedented. The most important capability this program provided had nothing to do with enhanced interrogation—it was the ability to hold and question terrorists, who, if released, would certainly return to the fight, but whose guilt would be difficult to establish in a criminal proceeding without compromising sensitive sources and methods. The CIA called the detention program a "crucial pillar of US counterterrorism efforts, aiding intelligence and law enforcement operations to capture additional terrorists, helping to thwart terrorist plots, and advancing our analysis of the al-Qa'ida target."[^569] We agree. We have no doubt that the CIA's detention program saved lives and played a vital role in weakening al- Qa'ida while the Program was in operation. When asked about the value of detainee information and whether he missed the intelligence from it, one senior CIA operator [Redacted] told members, "I miss it every day."[^570] We understand why,
 

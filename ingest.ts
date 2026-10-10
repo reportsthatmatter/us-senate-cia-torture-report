@@ -21,7 +21,7 @@ export default pipeline({
     // classification banners, portion markings, "Page 21 of 499" and GPO slugs come off (PDF p.51).
     redactionBoxes({
       dir: import.meta.dirname,
-      pack: { path: "reference/redactions.json.gz", sha256: "30f43de248c8d315ffa6e64ca1f5361a267f51890eedb6c54dc0b263ea2ffa1f" },
+      pack: { path: "reference/redactions.json.gz", sha256: "7d09b009bf6087e3f96fa6bc2394d6b07a911356db11cd86952d2e8a37e937b0" },
       pdfSha256: "4989f2fb14509322dfb22d3e90ed5b569bc653aba25826da7adb8da7c8090bb3",
     }),
     layoutPageJoins({ scanned: true }),
@@ -30,7 +30,7 @@ export default pipeline({
     layoutMarkers(),
     sequencedNoteOpenings(),
     romanFolios(),
-    contentsOutline({ ocr: true }),
+    contentsOutline({ ocr: true, centredMinor: true }),
     noteFaceRunOver(),
     escapeLeadingHash(),
   ],

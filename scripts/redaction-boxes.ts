@@ -393,9 +393,10 @@ function processPage(page: number, lines: string[]): PageRecord {
   const opening = (lead: string) => (usual && usual[1] >= 2 ? " ".repeat(usual[0]) : lead);
   lines.forEach((_, line) => {
     const t = current(line);
-    const m = /^(\s*)\(([^()]{0,45})\)\s+(?=\S)/.exec(t);
-    if (m && isPortion(m[2])) {
-      text.set(line, opening(m[1]) + t.slice(m[0].length));
+    // (a bulleted paragraph keeps its bullet: "• (TS//[box]//NF) On September 12, 2001, ...")
+    const m = /^(\s*)([•·]\s+)?\(([^()]{0,45})\)\s+(?=\S)/.exec(t);
+    if (m && isPortion(m[3])) {
+      text.set(line, (m[2] ? m[1] + m[2] : opening(m[1])) + t.slice(m[0].length));
       why(line, "portion");
     } else if (portionGaps.has(line)) {
       const g = new RegExp(`^(\\s*)${MARK}\\s+(?=[A-Z"'\u201c])`).exec(t);
