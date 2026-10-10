@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
-import type { SourcePass } from "@rtm/ingest";
+import { UNCODED_REDACTION, type SourcePass } from "@rtm/ingest";
 
 /**
  * The report's redactions, classification markings and printer's furniture, read off the page images
@@ -12,7 +12,8 @@ import type { SourcePass } from "@rtm/ingest";
  * of the `pdftotext -layout` text, what the line becomes (reference/redactions.json.gz):
  *
  * - **redaction**: the characters the OCR read inside a box ("H ^ H", "B I H I H", "|") become one
- *   mark, U+2588 FULL BLOCK, per box; a box with nothing read inside it gets a mark between the words
+ *   mark per box, written `[Redacted]` (the uncoded form of the corpus convention, site
+ *   docs/decisions/*-redactions.md; the pack itself marks a box U+2588 FULL BLOCK); a box with nothing read inside it gets a mark between the words
  *   either side, or a line of its own. The report's own "[REDACTED]", its pseudonyms and bracketed
  *   substitutions ("[DETENTION SITE GREEN]", "Country |" as printed) are words on the page and are kept.
  * - **portion**: a paragraph's opening classification marking, "(U)", "(S//NF)", "(TS//█//NF)", struck
@@ -70,7 +71,8 @@ export function redactionBoxes(options: { dir: string; pack: { path: string; sha
         if (!removed.has(i)) result.push(line ?? "");
         result.push(...(after.get(i) ?? []));
       });
-      return result;
+      // The pack marks a box U+2588; the served text writes the corpus's marker for a box with no code.
+      return result.map((line) => (line.includes("\u2588") ? line.replace(/\u2588/g, UNCODED_REDACTION) : line));
     },
   };
 }

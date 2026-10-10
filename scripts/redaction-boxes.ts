@@ -251,7 +251,7 @@ const overlapsY = (a: { y0: number; y1: number }, b: { y0: number; y1: number })
 
 /** `to: null` drops the line. `kinds` says why it changed: redaction, portion, banner, counter, slug. */
 type Edit = { line: number; from: string; to: string | null; kinds: string[]; remove?: true };
-type Insert = { after: number; text: string; kind?: string };
+type Insert = { after: number; text: string; kind?: string; y?: number };
 type PageRecord = { page: number; boxes: number[][]; edits: Edit[]; inserts: Insert[]; unpaired: number };
 
 function processPage(page: number, lines: string[]): PageRecord {
@@ -336,7 +336,7 @@ function processPage(page: number, lines: string[]): PageRecord {
       line += " ".repeat(pad) + MARK;
       j++;
     }
-    rec.inserts.push({ after: rows[i].after, text: line });
+    rec.inserts.push({ after: rows[i].after, text: line, y: rows[i].y });
     i = j;
   }
   // Rewrite each touched line.
@@ -425,9 +425,16 @@ function processPage(page: number, lines: string[]): PageRecord {
   const drop = new Set<number>();
   const banners: number[] = [];
   lines.forEach((_, line) => {
-    if (SLUG.test(current(line))) {
+    const t = current(line);
+    if (SLUG.test(t)) {
       drop.add(line);
       why(line, "slug");
+    } else if (pureBanner(t)) {
+      // anywhere on the page, a line that is nothing but a banner (a landscape table's page sets them
+      // aside, and their words may not pair with a position)
+      drop.add(line);
+      why(line, "banner");
+      if (lineY.has(line)) banners.push(line);
     }
   });
   // The letter of transmittal's letterhead (PDF p.2): the committee's members in two columns beside
@@ -567,6 +574,10 @@ function processPage(page: number, lines: string[]): PageRecord {
       why(folio, "folio");
     }
   }
+  // A box on a row of its own beside a dropped banner is the banner's own redaction.
+  rec.inserts = rec.inserts
+    .filter((ins) => ins.y === undefined || !banners.some((b) => Math.abs(yMid(b)! - pt(ins.y!)) <= 8))
+    .map(({ y: _y, ...ins }) => ins);
   for (const line of [...kinds.keys()].sort((a, b) => a - b))
     rec.edits.push({ line, from: lines[line], to: drop.has(line) ? null : current(line), kinds: [...kinds.get(line)!], ...(removed.has(line) ? { remove: true } : {}) });
   return rec;
@@ -595,6 +606,12 @@ function isBanner(t: string): boolean {
   const letters = t.toUpperCase().replace(/[^A-Z]/g, "");
   if (wordlike(t) >= 3) return false;
   return fuzzyIn("UNCLASSIFIED", letters) <= 4 || fuzzyIn("NOFORN", letters) <= 2 || fuzzyIn("SECRET", letters) <= 1 || /^TOP/.test(letters) && letters.length <= 12;
+}
+
+/** A line of nothing but a classification banner's words, however garbled: "TOPSECRET/D1 //NOFORN". */
+function pureBanner(t: string): boolean {
+  const flat = t.replace(/\[Redacted\]|\u2588/g, "").replace(/\s+/g, "");
+  return wordlike(t) === 0 && flat.replace(/[^A-Za-z]/g, "").length <= 30 && /NOFORN|SECRET|UNCLASSIFIED|OFORN/i.test(flat) && isBanner(t);
 }
 
 /** The inside of a portion marking: U, C, S, S//NF, S//OC/NF, or TS// with its redaction. */
