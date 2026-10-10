@@ -98,3 +98,20 @@ pages:
     footnotes: [21, 22]
     markers: [21, 22]
     must_not_contain: ["(U) The final", "NOFORN"]
+  # Notes whose numbers the OCR lost or misread (reportsthatmatter-fgle): 123 read as "' \"" glued to its text,
+  # 127 as "™" glued to "See", 128 as "I2H" before a box. The page vote this pack used to number notes by took
+  # 122 as the offset from the three numbers after the lost 123 and renumbered the correct 121 and 122.
+  - pdf: 59
+    printed: 30
+    verified_by: "Claude (Opus 5.5), 2026-10-10, against the page image"
+    footnotes: [121, 122, 123, 124, 125, 126, 127, 128]
+    markers: [121, 122, 123, 124, 125, 126, 127, 128]
+    must_not_contain: ["Page 30 of 499", "NOFORN"]
+  # A page whose note numbers the OCR sized with their notes (7.2 pt, not raised), one of them ("1008") paired
+  # with the body's raised 1008, and five notes opening on a box with no number read (1009-1013).
+  - pdf: 194
+    printed: 165
+    verified_by: "Claude (Opus 5.5), 2026-10-10, against the page image"
+    footnotes: [1007, 1008, 1009, 1010, 1011, 1012, 1013]
+    markers: [1007, 1008, 1009, 1010, 1011, 1012, 1013]
+    must_not_contain: ["Page 165 of 499", "NOFORN"]

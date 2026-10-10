@@ -1,11 +1,11 @@
 {
-  "markdownSha": "9d3b3d26555619c967c595ccfbd3302453506d5e95dda7db36c5fca4549e898b",
-  "words": 396680,
+  "markdownSha": "1fbec9e51702d046544c044bf58dd04d717ac258750d0b57c5aa1530e2260b22",
+  "words": 396764,
   "blocks": {
     "heading": 150,
-    "quote": 627,
-    "list": 315,
-    "paragraph": 2441
+    "quote": 613,
+    "list": 311,
+    "paragraph": 2329
   },
   "headings": [
     "REPORT",
@@ -159,7 +159,7 @@
     "MINORITY VIEWS OF SENATORS RISCH, COATS, AND RUBIO",
     "Notes"
   ],
-  "footnotes": 2971,
+  "footnotes": 3260,
   "pageMarkers": 683,
   "poppler": "26.08.0"
 }

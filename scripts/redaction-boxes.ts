@@ -4,6 +4,11 @@
  * `redactionBoxes()` in redactions.ts applies to the text layer during ingest.
  *
  * Usage (from the report repo): node scripts/redaction-boxes.ts [--pages 51,52] [--dpi 100] [--out path]
+ *   [--no-weak] [--no-anchors]   (measuring only: number notes without weak starts / neighbouring pages)
+ *   NOTE_CHECK_VERBOSE=1         lists each page whose first note number does not follow the page before's
+ *
+ * It ends with a check on the note numbers it wrote: "note sequence: N pages, K out of step with the
+ * page before, M numbers missing between pages" (reportsthatmatter-fgle).
  *
  * Why: the declassified report prints each redaction as a solid black box. The scan's OCR reads a
  * box as garble ("H ^ H", "B I H I H", "|") or as nothing at all ("November         2002"), so the
@@ -254,7 +259,14 @@ type Edit = { line: number; from: string; to: string | null; kinds: string[]; re
 type Insert = { after: number; text: string; kind?: string; y?: number };
 type PageRecord = { page: number; boxes: number[][]; edits: Edit[]; inserts: Insert[]; unpaired: number };
 
-function processPage(page: number, lines: string[]): PageRecord {
+type Anchors = { prev?: number; next?: number };
+type Pending = {
+  rec: PageRecord;
+  plan: (anchors: Anchors) => { first: number; last: number } | undefined;
+  finish: (anchors: Anchors) => { rec: PageRecord; first?: number; last?: number };
+};
+
+function processPage(page: number, lines: string[]): Pending {
   const boxes = boxesOn(page);
   const rec: PageRecord = { page, boxes: boxes.map((b) => [b.x0, b.y0, b.x1, b.y1].map((v) => Math.round((v * 72 * 10) / DPI) / 10)), edits: [], inserts: [], unpaired: 0 };
   const tokens: Token[] = [];
@@ -493,60 +505,174 @@ function processPage(page: number, lines: string[]): PageRecord {
     const t = tokens.find((u) => u.line === line && u.word);
     return t ? pt(t.word!.x0) : undefined;
   };
-  const numberLine = (line: number) => /^\s*\d{1,4}\s*$/.test(lines[line]) && (heights.get(line) ?? 99) < 6.5;
+  // A note's number on a row of its own: raised (under 6.5 pt), or in the notes' size and at the line's
+  // start, where the OCR sized it with its note (p.194, "1007" at 7.2 pt); a folio is centred.
+  const numberLine = (line: number) =>
+    /^\s*\d{1,4}\s*$/.test(lines[line]) && ((heights.get(line) ?? 99) < 6.5 || (/^\d/.test(lines[line]) && (heights.get(line) ?? 0) < 8.6));
   const noteLines = textLines.filter((l) => (heights.get(l) ?? 99) < 8.6 && !drop.has(l));
   const noteMargin = Math.min(...textLines.filter(numberLine).map((l) => firstX(l)!).filter((x) => x !== undefined), Infinity);
+  // where a line's words run, in pt
+  const rowX = (line: number) => {
+    const own = tokens.filter((t) => t.line === line && t.word);
+    return own.length ? { x0: pt(Math.min(...own.map((t) => t.word!.x0))), x1: pt(Math.max(...own.map((t) => t.word!.x1))) } : undefined;
+  };
+  const noteRight = Math.max(...noteLines.map((l) => rowX(l)?.x1 ?? 0), 0);
+  type Start = { line: number; n?: number; misread?: boolean; weak?: number; strip?: string };
+  const starts: Start[] = [];
+  // A raised number the OCR read as letters ("so" for 50): short, raised, at the note margin.
+  const misreadNumber = (line: number) =>
+    !numberLine(line) && /^\s*[0-9A-Za-z.,'!|()]{1,5}\s*$/.test(lines[line]) && (heights.get(line) ?? 99) < 6.5 && Math.abs((firstX(line) ?? -99) - noteMargin) <= 3;
   if (Number.isFinite(noteMargin)) {
-    type Start = { line: number; n?: number; misread?: boolean };
-    const starts: Start[] = [];
-    // A raised number the OCR read as letters ("so" for 50): short, raised, at the note margin.
-    const misreadNumber = (line: number) =>
-      !numberLine(line) && /^\s*[0-9A-Za-z.,'!|]{1,5}\s*$/.test(lines[line]) && (heights.get(line) ?? 99) < 6.5 && Math.abs((firstX(line) ?? -99) - noteMargin) <= 3;
-    for (const line of [...new Set([...textLines.filter(numberLine), ...textLines.filter(misreadNumber), ...noteLines])].sort((a, b) => a - b)) {
+    // (a number row whose word was paired elsewhere has no position: lines, not textLines)
+    const numberRows = [...lines.keys()].filter((l) => !drop.has(l) && numberLine(l) && (lineY.has(l) || /^\d/.test(lines[l])));
+    for (const line of [...new Set([...numberRows, ...textLines.filter(misreadNumber), ...noteLines])].sort((a, b) => a - b)) {
       if (numberLine(line)) {
-        starts.push({ line, n: Number(lines[line].trim()) });
+        // a note's number is at the note margin; a raised marker the body set on a row of its own is
+        // not (p.80, "246" above "Pakistan")
+        const x = firstX(line);
+        // (a number at the layout text's first column is at the margin, whatever word it was paired with:
+        // p.194's "1008" paired with the body's raised 1008)
+        if (/^\d/.test(lines[line]) || (x !== undefined && Math.abs(x - noteMargin) <= 3))
+          starts.push({ line, n: Number(lines[line].trim()) });
         continue;
       }
       if (misreadNumber(line)) {
         starts.push({ line, misread: true });
         continue;
       }
+      let prev = line - 1;
+      while (prev >= 0 && !lines[prev].trim()) prev--;
+      // under a number line (one the size test missed too, at the line's start: p.80's "250")
+      if (prev >= 0 && (numberLine(prev) || misreadNumber(prev) || /^\d{1,4}\s*$/.test(lines[prev]))) continue;
       // where the line starts: its first word, or a box before it
       const y = yMid(line)!;
       const xs = [firstX(line), ...boxes.filter((b) => pt(b.y0) - 1 <= y && y <= pt(b.y1) + 1).map((b) => pt(b.x0))].filter((x): x is number => x !== undefined);
       const startX = Math.min(...xs);
-      if (!(startX >= noteMargin + 5 && startX <= noteMargin + 15)) continue;
-      let prev = line - 1;
-      while (prev >= 0 && !lines[prev].trim()) prev--;
-      if (prev >= 0 && (numberLine(prev) || misreadNumber(prev))) continue;
-      starts.push({ line });
-    }
-    // The page's notes are numbered in order, so each start's number is its place on the page plus
-    // one offset. The offset most of the numbers the OCR read agree on (two at least, or the only one)
-    // numbers every start: a lost number is put back, a misread one ("37" between 26 and 28, "so" for
-    // 50, "5" for 51) is corrected.
-    const offsets = new Map<number, number>();
-    starts.forEach((st, k) => st.n !== undefined && offsets.set(st.n - k, (offsets.get(st.n - k) ?? 0) + 1));
-    const known = starts.filter((st) => st.n !== undefined).length;
-    const [offset, votes] = [...offsets].sort((x, y) => y[1] - x[1] || x[0] - y[0])[0] ?? [undefined, 0];
-    if (offset !== undefined && (votes >= 2 || known === 1) && votes * 2 > known) {
-      starts.forEach((st, k) => {
-        const n = k + offset;
-        if (n < 1 || st.n === n) return;
-        if (st.n !== undefined || st.misread) rec.edits.push({ line: st.line, from: lines[st.line], to: lines[st.line].replace(/\S+/, String(n)), kinds: ["note-number"] });
-        else rec.inserts.push({ after: st.line - 1, text: String(n), kind: "note-number" });
-      });
+      if (startX >= noteMargin + 5 && startX <= noteMargin + 16) {
+        starts.push({ line });
+        continue;
+      }
+      if (NO_WEAK) continue;
+      // A note line that starts well in from the margin, under another note's line: a note whose
+      // number and first words the OCR lost against a box (p.115 note 475, "[box] Email from:" read
+      // as "from:" 37 pt in) — weak, as a table-like run-over sets its lines in too.
+      if (startX > noteMargin + 15 && startX <= noteMargin + 80 && prev >= 0 && noteLines.includes(prev)) {
+        starts.push({ line, weak: 0.35 });
+        continue;
+      }
+      if (Math.abs(startX - noteMargin) > 3) continue;
+      // A line at the margin may open a note whose raised number the OCR read as junk glued to the
+      // text ("' \" S e e analysis", "™See", "I2H █ 10424", PDF p.59 notes 123, 127, 128) or lost: a
+      // weak start, numbered only where the page's sequence needs a note there (below).
+      const t = current(line);
+      const stripped = t.replace(JUNK_LEAD, "$1");
+      if (stripped !== t && /^\s*\S/.test(stripped)) {
+        starts.push({ line, weak: 0.3, strip: stripped });
+        continue;
+      }
+      // or a line at the margin after a note line that ends a sentence well short of the column, or
+      // the page's first note line (a note's run-over from the page before, or a note that lost its
+      // number: the page before's last number decides, p.211 "Memorandum for John Rizzo", 1074)
+      const pr = prev >= 0 ? rowX(prev) : undefined;
+      const firstNote = !starts.length && !noteLines.some((l) => l < line);
+      if (((pr && noteLines.includes(prev) && /[.)"”]\s*$/.test(current(prev)) && pr.x1 < noteRight - 40) || firstNote) && /^\s*[A-Z"“]/.test(t))
+        starts.push({ line, weak: 0.45 });
     }
   }
+  // The page's notes are numbered in order. Each start's number is the first note's number plus the
+  // starts accepted before it; strong starts are always accepted, a weak one only where the numbers
+  // the OCR read (and the neighbouring pages' last and first numbers) need a note there. The first
+  // number and the weak starts are chosen to agree with the most read numbers, so a lost number is
+  // put back, a misread one ("37" between 26 and 28, "so" for 50, "5" for 51) is corrected, and a
+  // page that lost two numbers (p.59) is not renumbered by an offset the lost starts shifted.
+  const plan = (anchors: { prev?: number; next?: number }) => {
+    if (!starts.length) return undefined;
+    const known = starts.filter((st) => st.n !== undefined).length;
+    const firsts = new Set<number>();
+    starts.forEach((st, i) => {
+      if (st.n !== undefined) for (let j = 0; j <= i; j++) firsts.add(st.n - j);
+    });
+    if (anchors.prev !== undefined) firsts.add(anchors.prev + 1);
+    // A path numbers the accepted starts in order: each the next number, or (SKIP) a read number a
+    // few ahead, where notes the page holds were not found; a read number is not rewritten to fit an
+    // offset that lost starts shifted (p.146: 692 read right, 693 and 694 lost).
+    type Path = { score: number; matches: number; weak: number; numbers: (number | undefined)[] };
+    const better = (a: Path, b: Path | undefined) => !b || a.score > b.score + 1e-9 || (Math.abs(a.score - b.score) < 1e-9 && a.weak < b.weak);
+    let best: { path: Path; score: number } | undefined;
+    for (const s0 of [...firsts].sort((a, b) => a - b)) {
+      if (s0 < 1) continue;
+      // keyed by the last number given (s0 - 1 before the first)
+      let dp = new Map<number, Path>([[s0 - 1, { score: 0, matches: 0, weak: 0, numbers: [] }]]);
+      for (const st of starts) {
+        const nx = new Map<number, Path>();
+        const put = (last: number, p: Path) => better(p, nx.get(last)) && nx.set(last, p);
+        for (const [last, v] of dp) {
+          const first = !v.numbers.some((n) => n !== undefined);
+          const options = [last + 1];
+          // a skip only once the path has kept a number the OCR read: from guesses alone it would follow an anchor
+          if (!first && v.matches > 0 && st.n !== undefined && st.n > last + 1 && st.n - last - 1 <= SKIP_MAX) options.push(st.n);
+          for (const n of options) {
+            const m = st.n === n ? 1 : 0;
+            const skip = (n - last - 1) * SKIP;
+            put(n, { score: v.score + m - skip - (st.weak ?? 0), matches: v.matches + m, weak: v.weak + (st.weak ? 1 : 0), numbers: [...v.numbers, n] });
+          }
+          if (st.weak) put(last, { ...v, numbers: [...v.numbers, undefined] });
+        }
+        dp = nx;
+      }
+      for (const [last, v] of dp) {
+        if (!v.numbers.some((n) => n !== undefined)) continue;
+        let score = v.score;
+        if (anchors.prev !== undefined && s0 === anchors.prev + 1) score += 1;
+        if (anchors.next !== undefined && last + 1 === anchors.next) score += 1;
+        const tie = best && Math.abs(score - best.score) < 1e-9;
+        if (!best || score > best.score + 1e-9 || (tie && (v.matches > best.path.matches || (v.matches === best.path.matches && v.weak < best.path.weak)))) best = { path: v, score };
+      }
+    }
+    if (!best) return undefined;
+    const { matches, numbers } = best.path;
+    if (!((matches >= 2 || (known === 1 && matches === 1)) && matches * 2 > known)) return undefined;
+    const given = numbers.filter((n): n is number => n !== undefined);
+    return { first: given[0], last: given[given.length - 1], numbers };
+  };
+  // A page left as read: its first and last read numbers, where they are in order.
+  const read = () => {
+    const ns = starts.map((st) => st.n).filter((n): n is number => n !== undefined);
+    return ns.length >= 2 && ns.every((n, i) => i === 0 || n > ns[i - 1]) ? { first: ns[0], last: ns[ns.length - 1] } : undefined;
+  };
+  // The rest of the page waits for its neighbours' numbers (main): number the notes, then write the edits.
+  const finish = (anchors: { prev?: number; next?: number }) => {
+    const p = plan(anchors);
+    if (p) {
+      starts.forEach((st, i) => {
+        const n = p.numbers[i];
+        if (n === undefined || st.n === n) return;
+        if (st.n !== undefined || st.misread) {
+          text.set(st.line, current(st.line).replace(/\S+/, String(n)));
+          why(st.line, "note-number");
+          return;
+        }
+        rec.inserts.push({ after: st.line - 1, text: String(n), kind: "note-number" });
+        if (st.strip !== undefined) {
+          text.set(st.line, st.strip);
+          why(st.line, "note-number");
+        }
+      });
+    }
+    // A box on a row of its own beside a dropped banner is the banner's own redaction.
+    rec.inserts = rec.inserts
+      .filter((ins) => ins.y === undefined || !banners.some((b) => Math.abs(yMid(b)! - pt(ins.y!)) <= 8))
+      .map(({ y: _y, ...ins }) => ins);
+    for (const line of [...kinds.keys()].sort((a, b) => a - b))
+      rec.edits.push({ line, from: lines[line], to: drop.has(line) ? null : current(line), kinds: [...kinds.get(line)!], ...(removed.has(line) ? { remove: true } : {}) });
+    const r = read();
+    return { rec, first: p?.first ?? r?.first, last: p?.last ?? r?.last };
+  };
   // Rows of one printed line: a skewed scan puts the start of a line a point or two off its rest, and
   // the text layer gives them as two rows ("From Abu" over "Zubaydah's capture on March 28, 2002,",
   // PDF p.75), so the first reads as a line on its own. Consecutive rows whose words sit on the same
   // baseline (centres within 5.5 pt; lines are 11 pt apart or more) and side by side (the second starts right of the first's end) are
   // one line: the second's text goes after the first's, and its row is removed.
-  const rowX = (line: number) => {
-    const own = tokens.filter((t) => t.line === line && t.word);
-    return own.length ? { x0: pt(Math.min(...own.map((t) => t.word!.x0))), x1: pt(Math.max(...own.map((t) => t.word!.x1))) } : undefined;
-  };
   const removed = new Set<number>();
   for (let line = 0; line + 1 < lines.length; line++) {
     const next = line + 1;
@@ -581,14 +707,19 @@ function processPage(page: number, lines: string[]): PageRecord {
       why(folio, "folio");
     }
   }
-  // A box on a row of its own beside a dropped banner is the banner's own redaction.
-  rec.inserts = rec.inserts
-    .filter((ins) => ins.y === undefined || !banners.some((b) => Math.abs(yMid(b)! - pt(ins.y!)) <= 8))
-    .map(({ y: _y, ...ins }) => ins);
-  for (const line of [...kinds.keys()].sort((a, b) => a - b))
-    rec.edits.push({ line, from: lines[line], to: drop.has(line) ? null : current(line), kinds: [...kinds.get(line)!], ...(removed.has(line) ? { remove: true } : {}) });
-  return rec;
+  return { rec, plan: (a: Anchors) => plan(a) ?? read(), finish };
 }
+
+/**
+ * A raised note number the OCR read as junk at the start of a note's first line: tokens of nothing
+ * but punctuation ("' \""), punctuation glued to the first word ("™See"), or a short token mixing
+ * digits and letters ("I2H" for 128). A box (█), "(" and "[" open notes as printed and are not junk.
+ */
+const JUNK_LEAD = /^(\s*)(?:(?:[^A-Za-z0-9\s█(\[]+\s+)+|[^A-Za-z0-9\s█(\["“]+(?=[A-Za-z])|(?=\S*\d)(?=\S*[A-Za-z])[A-Za-z0-9]{2,4}\s+)/;
+const NO_WEAK = args.includes("--no-weak");
+const NO_ANCHORS = args.includes("--no-anchors");
+const SKIP = 0.4; // the cost of each note number a page's numbering steps over
+const SKIP_MAX = 5;
 
 const TOP_BAND = 74; // pt from the top of the page
 const BOTTOM_BAND = 686;
@@ -685,14 +816,65 @@ function main() {
   const raw = execFileSync("pdftotext", ["-layout", "-enc", "UTF-8", pdf, "-"], { encoding: "utf8", maxBuffer: 512 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
   // as @rtm/ingest's extractPages: split on form feeds; C0 controls become spaces
   const pages = raw.split("\f").map((p) => p.split("\n").map((l) => l.replace(/[\u0000-\u0008\u000b\u000d-\u001f]/g, " ")));
-  const records: PageRecord[] = [];
   const total = pages.length - (pages[pages.length - 1].every((l) => !l.trim()) ? 1 : 0);
+  const pending = new Map<number, Pending>();
   for (let p = 1; p <= total; p++) {
     if (ONLY && !ONLY.includes(p)) continue;
-    const rec = processPage(p, pages[p - 1]);
-    if (rec.boxes.length || rec.edits.length || rec.inserts.length) records.push(rec);
+    pending.set(p, processPage(p, pages[p - 1]));
     if (p % 50 === 0) process.stderr.write(`page ${p}/${total}\n`);
   }
+  // Note numbers run on from page to page within a part: a page's numbering is checked against the
+  // last number of the page before and the first of the page after (each numbered on its own first),
+  // where those are within a few notes of it (a part's notes restart at 1).
+  let alone = new Map<number, { first: number; last: number }>();
+  for (const [p, pend] of pending) {
+    const r = pend.plan({});
+    if (r) alone.set(p, r);
+  }
+  const near = (p: number, step: number) => {
+    for (let q = p + step, i = 0; i < 3; i++, q += step) if (alone.has(q)) return alone.get(q);
+    return undefined;
+  };
+  const anchorsOf = (p: number): Anchors => {
+    const own = alone.get(p);
+    const anchors: Anchors = {};
+    if (!own || NO_ANCHORS) return anchors;
+    const before = near(p, -1);
+    const after = near(p, 1);
+    if (before && Math.abs(before.last + 1 - own.first) <= 8) anchors.prev = before.last;
+    if (after && Math.abs(after.first - (own.last + 1)) <= 8) anchors.next = after.first;
+    return anchors;
+  };
+  // A page's tail can need the next page's first number and that page the tail's last: two rounds.
+  for (let round = 0; round < 2 && !NO_ANCHORS; round++) {
+    const next = new Map<number, { first: number; last: number }>();
+    for (const [p, pend] of pending) {
+      const r = pend.plan(anchorsOf(p));
+      if (r) next.set(p, r);
+    }
+    alone = next;
+  }
+  const records: PageRecord[] = [];
+  const numbered = new Map<number, { first?: number; last?: number }>();
+  for (const [p, pend] of pending) {
+    const { rec, first, last } = pend.finish(anchorsOf(p));
+    numbered.set(p, { first, last });
+    if (rec.boxes.length || rec.edits.length || rec.inserts.length) records.push(rec);
+  }
+  // The check: each numbered page should start where the numbered page before it ended.
+  let outOfStep = 0;
+  let missing = 0;
+  let prevLast: number | undefined;
+  for (const [p, { first, last }] of [...numbered].sort((a, b) => a[0] - b[0])) {
+    if (first === undefined || last === undefined) continue;
+    if (prevLast !== undefined && first !== prevLast + 1 && Math.abs(first - (prevLast + 1)) <= 8) {
+      outOfStep++;
+      if (first > prevLast + 1) missing += first - prevLast - 1;
+      if (process.env.NOTE_CHECK_VERBOSE) process.stderr.write(`p.${p}: first note ${first}, page before ended ${prevLast}\n`);
+    }
+    prevLast = last;
+  }
+  process.stderr.write(`note sequence: ${numbered.size} pages, ${outOfStep} out of step with the page before, ${missing} numbers missing between pages\n`);
   const pack = {
     pdf: "archive/CRPT-113srpt288.pdf",
     sha256: createHash("sha256").update(readFileSync(pdf)).digest("hex"),

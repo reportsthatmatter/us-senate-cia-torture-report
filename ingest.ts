@@ -20,12 +20,12 @@ export default pipeline({
     // anything reads a page: each printed black box is one redaction, written "[Redacted]", where the
     // OCR read garble ("Country |", "B I H I H") or nothing (PDF p.51); the struck classification banners,
     // portion markings "(TS//[box]//NF)", "Page 22 of 499" and GPO slugs come off (every page); note numbers
-    // the OCR lost against a box or misread are put back from the page's sequence (p.54: 86, 88; p.48:
-    // "so" for 50); rows of one printed line a skewed scan split are rejoined (p.75); the front matter's
+    // the OCR lost against a box or misread are put back from the page's sequence, checked against the
+    // pages either side (p.54: 86, 88; p.48: "so" for 50; p.59: 123 read as junk; p.194: 1009-1013); rows of one printed line a skewed scan split are rejoined (p.75); the front matter's
     // roman folios are set from their place (p.4 "in" for iii).
     redactionBoxes({
       dir: import.meta.dirname,
-      pack: { path: "reference/redactions.json.gz", sha256: "61872b01b571983d7a323514d8a8d466f4909013211dc00ba8f80eaa3b1650d1" },
+      pack: { path: "reference/redactions.json.gz", sha256: "db3e3d6d892767ba0f063e4cb54917f8e1f86c416bfcdd37f9ee6424fe42b4a3" },
       pdfSha256: "4989f2fb14509322dfb22d3e90ed5b569bc653aba25826da7adb8da7c8090bb3",
     }),
     // A paragraph run over a page break joins when the layout says it runs on; the OCR layer sizes

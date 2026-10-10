@@ -25,7 +25,7 @@
       "path": "reference/redactions.json.gz",
       "format": "json",
       "mediatype": "application/gzip",
-      "hash": "sha256:61872b01b571983d7a323514d8a8d466f4909013211dc00ba8f80eaa3b1650d1",
+      "hash": "sha256:db3e3d6d892767ba0f063e4cb54917f8e1f86c416bfcdd37f9ee6424fe42b4a3",
       "sources": [
         {
           "title": "archive/CRPT-113srpt288.pdf"
