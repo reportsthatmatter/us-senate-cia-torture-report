@@ -1,0 +1,897 @@
+/**
+ * Finds the redaction boxes printed on each page of the report and says, line by line, what the
+ * PDF's text layer holds where each box is. Writes reference/redactions.json.gz, which
+ * `redactionBoxes()` in redactions.ts applies to the text layer during ingest.
+ *
+ * Usage (from the report repo): node scripts/redaction-boxes.ts [--pages 51,52] [--dpi 100] [--out path]
+ *   [--no-weak] [--no-anchors]   (measuring only: number notes without weak starts / neighbouring pages)
+ *   NOTE_CHECK_VERBOSE=1         lists each page whose first note number does not follow the page before's
+ *
+ * It ends with a check on the note numbers it wrote: "note sequence: N pages, K out of step with the
+ * page before, M numbers missing between pages" (reportsthatmatter-fgle).
+ *
+ * Why: the declassified report prints each redaction as a solid black box. The scan's OCR reads a
+ * box as garble ("H ^ H", "B I H I H", "|") or as nothing at all ("November         2002"), so the
+ * text layer alone cannot say where a redaction is. The page image can: a box is a solid dark
+ * rectangle, thicker than any stroke of type. This script
+ *
+ *   1. renders each page in grey (`pdftoppm -gray`, PGM), opens it with a 5x5 square (so type,
+ *      rules and strikethroughs, all thinner than 5 px at 100 dpi, vanish), and takes each remaining
+ *      dark component whose bounding box is at least 85% filled and at least 9 px tall as a box;
+ *   2. reads each word's position from `pdftotext -bbox-layout`, and pairs those words with the
+ *      tokens of `pdftotext -layout` (what the pipeline reads), in order;
+ *   3. for each line of the -layout text, replaces the characters that sit inside a box with one
+ *      redaction mark per box, and puts a mark where a box sits on the line with no characters;
+ *      a box on a row with no text at all becomes a line of its own.
+ *
+ * The output is deterministic for a given PDF, poppler version and dpi, and records all three. Each
+ * edit holds the line as the text layer reads it (`from`), so a poppler that reads a line
+ * differently makes the edit miss (counted by the pass), never land on the wrong text.
+ */
+import { execFileSync, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { gzipSync } from "node:zlib";
+
+export const MARK = "█"; // █ FULL BLOCK
+
+const repo = join(import.meta.dirname, "..");
+const pdf = join(repo, "archive/CRPT-113srpt288.pdf");
+
+const args = process.argv.slice(2);
+const opt = (name: string) => {
+  const i = args.indexOf(name);
+  return i >= 0 ? args[i + 1] : undefined;
+};
+const DPI = Number(opt("--dpi") ?? 100);
+const OUT = opt("--out") ?? join(repo, "reference/redactions.json.gz");
+const ONLY = opt("--pages")?.split(",").map(Number);
+
+const OPEN = 5; // the opening's square, px
+const MIN_H = 9; // px at 100 dpi: about 6.5 pt, taller than any stroke of type
+const MIN_W = 6;
+const MIN_FILL = 0.85;
+const DARK = 96; // grey level below which a pixel is ink
+
+type Box = { x0: number; y0: number; x1: number; y1: number }; // px, inclusive-exclusive
+type Word = { x0: number; y0: number; x1: number; y1: number; text: string };
+
+function render(page: number): { w: number; h: number; px: Uint8Array } {
+  const buf = execFileSync("pdftoppm", ["-f", String(page), "-l", String(page), "-r", String(DPI), "-gray", pdf], {
+    maxBuffer: 256 * 1024 * 1024,
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  // P5\n<w> <h>\n<max>\n<bytes>; tolerate comments
+  let pos = 0;
+  const fields: string[] = [];
+  while (fields.length < 4) {
+    while (buf[pos] === 0x20 || buf[pos] === 0x0a || buf[pos] === 0x0d || buf[pos] === 0x09) pos++;
+    if (buf[pos] === 0x23) {
+      while (buf[pos] !== 0x0a) pos++;
+      continue;
+    }
+    let s = "";
+    while (buf[pos] !== 0x20 && buf[pos] !== 0x0a && buf[pos] !== 0x0d && buf[pos] !== 0x09) s += String.fromCharCode(buf[pos++]);
+    fields.push(s);
+  }
+  pos++; // the single whitespace after maxval
+  if (fields[0] !== "P5") throw new Error(`page ${page}: not a PGM (${fields[0]})`);
+  const w = Number(fields[1]);
+  const h = Number(fields[2]);
+  return { w, h, px: new Uint8Array(buf.buffer, buf.byteOffset + pos, w * h) };
+}
+
+/** Sum over every k x k window, by an integral image. */
+function windowCount(mask: Uint8Array, w: number, h: number, k: number): Int32Array {
+  const I = new Int32Array((w + 1) * (h + 1));
+  for (let y = 0; y < h; y++) {
+    let row = 0;
+    for (let x = 0; x < w; x++) {
+      row += mask[y * w + x];
+      I[(y + 1) * (w + 1) + (x + 1)] = I[y * (w + 1) + (x + 1)] + row;
+    }
+  }
+  // out[y*w+x] = count in the window whose top-left is (x, y)
+  const out = new Int32Array(w * h);
+  for (let y = 0; y + k <= h; y++)
+    for (let x = 0; x + k <= w; x++)
+      out[y * w + x] = I[(y + k) * (w + 1) + (x + k)] - I[y * (w + 1) + (x + k)] - I[(y + k) * (w + 1) + x] + I[y * (w + 1) + x];
+  return out;
+}
+
+function boxesOn(page: number): Box[] {
+  const { w, h, px } = render(page);
+  const dark = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) dark[i] = px[i] < DARK ? 1 : 0;
+  const k = OPEN;
+  // erosion: a window entirely dark marks its top-left
+  const full = windowCount(dark, w, h, k);
+  const eroded = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) eroded[i] = full[i] === k * k ? 1 : 0;
+  // dilation: a pixel is kept if any window covering it was entirely dark
+  const any = windowCount(eroded, w, h, k);
+  const opened = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const y0 = Math.max(0, y - k + 1);
+      const x0 = Math.max(0, x - k + 1);
+      // kept if any eroded top-left lies in [x-k+1..x] x [y-k+1..y]: exactly the window at (x0, y0)
+      opened[y * w + x] = dark[y * w + x] && any[y0 * w + x0] > 0 ? 1 : 0;
+    }
+  // Rectangles: each row's dark runs, stacked onto the run above when both ends agree within 2 px.
+  // (Not connected components: two boxes on consecutive lines often touch, and their union is no
+  // rectangle.)
+  type Open = { x0: number; x1: number; y0: number; y1: number };
+  let open: Open[] = [];
+  const boxes: Box[] = [];
+  const close = (r: Open) => {
+    if (r.y1 - r.y0 >= MIN_H * (DPI / 100) && r.x1 - r.x0 >= MIN_W * (DPI / 100)) boxes.push({ ...r });
+  };
+  for (let y = 0; y <= h; y++) {
+    const runs: Array<[number, number]> = [];
+    if (y < h) {
+      let x = 0;
+      while (x < w) {
+        if (!opened[y * w + x]) {
+          x++;
+          continue;
+        }
+        const x0 = x;
+        while (x < w && opened[y * w + x]) x++;
+        if (x - x0 >= MIN_W * (DPI / 100)) runs.push([x0, x]);
+      }
+    }
+    const next: Open[] = [];
+    for (const [x0, x1] of runs) {
+      const i = open.findIndex((r) => Math.abs(r.x0 - x0) <= 2 && Math.abs(r.x1 - x1) <= 2);
+      if (i >= 0) {
+        const r = open.splice(i, 1)[0];
+        next.push({ x0: Math.min(r.x0, x0), x1: Math.max(r.x1, x1), y0: r.y0, y1: y + 1 });
+      } else next.push({ x0, x1, y0: y, y1: y + 1 });
+    }
+    open.forEach(close);
+    open = next;
+  }
+  void MIN_FILL;
+  return boxes;
+}
+
+const decode = (s: string) =>
+  s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+
+function wordsOn(page: number): Word[] {
+  const html = execFileSync("pdftotext", ["-bbox-layout", "-enc", "UTF-8", "-f", String(page), "-l", String(page), pdf, "-"], {
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  const s = DPI / 72;
+  const out: Word[] = [];
+  for (const m of html.matchAll(/<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="([\d.]+)">([^<]*)<\/word>/g))
+    out.push({ x0: Number(m[1]) * s, y0: Number(m[2]) * s, x1: Number(m[3]) * s, y1: Number(m[4]) * s, text: decode(m[5]) });
+  return out;
+}
+
+type Token = { line: number; start: number; end: number; text: string; word?: Word };
+
+/** Pairs the -layout tokens with the -bbox words: longest common subsequence on their text. */
+function pair(tokens: Token[], words: Word[]) {
+  const n = tokens.length;
+  const m = words.length;
+  // Most pages pair one to one in order; check that first.
+  if (n === m && tokens.every((t, i) => t.text === words[i].text)) {
+    tokens.forEach((t, i) => (t.word = words[i]));
+    return;
+  }
+  const L = new Uint16Array((n + 1) * (m + 1));
+  for (let i = n - 1; i >= 0; i--)
+    for (let j = m - 1; j >= 0; j--)
+      L[i * (m + 1) + j] = tokens[i].text === words[j].text ? L[(i + 1) * (m + 1) + j + 1] + 1 : Math.max(L[(i + 1) * (m + 1) + j], L[i * (m + 1) + j + 1]);
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (tokens[i].text === words[j].text) {
+      tokens[i].word = words[j];
+      i++;
+      j++;
+    } else if (L[(i + 1) * (m + 1) + j] >= L[i * (m + 1) + j + 1]) i++;
+    else j++;
+  }
+}
+
+/**
+ * A token paired with a word on another row was paired with the wrong copy of the same text (a page
+ * has many "|" and "^"): unpair it, then pair each unpaired token with an unused word of the same
+ * text on its own line's row, nearest to where its neighbours put it.
+ */
+function repairPairs(tokens: Token[], words: Word[]) {
+  const mid = (w: Word) => (w.y0 + w.y1) / 2;
+  const rows = new Map<number, number>();
+  for (const line of new Set(tokens.map((t) => t.line))) {
+    const ys = tokens.filter((t) => t.line === line && t.word).map((t) => mid(t.word!));
+    if (ys.length) rows.set(line, median(ys));
+  }
+  for (const t of tokens) if (t.word && rows.has(t.line) && Math.abs(mid(t.word) - rows.get(t.line)!) > 4) t.word = undefined;
+  const used = new Set(tokens.filter((t) => t.word).map((t) => t.word!));
+  // A line none of whose tokens paired (its words come elsewhere in the bbox reading order): pair it
+  // whole where exactly one row of unused words holds all its tokens.
+  for (const line of new Set(tokens.map((t) => t.line))) {
+    if (rows.has(line)) continue;
+    const own = tokens.filter((t) => t.line === line);
+    const fits = words
+      .filter((w) => !used.has(w) && w.text === own[0].text)
+      .map((first) => {
+        const taken = new Set<Word>();
+        const got = own.map((t) => {
+          const w = words.find((w) => !used.has(w) && !taken.has(w) && w.text === t.text && Math.abs(mid(w) - mid(first)) <= 4);
+          if (w) taken.add(w);
+          return w;
+        });
+        return got.every(Boolean) ? got : undefined;
+      })
+      .filter(Boolean) as Word[][];
+    if (fits.length !== 1) continue;
+    own.forEach((t, i) => {
+      t.word = fits[0][i];
+      used.add(fits[0][i]);
+    });
+    rows.set(line, mid(fits[0][0]));
+  }
+  tokens.forEach((t, i) => {
+    if (t.word || !rows.has(t.line)) return;
+    const y = rows.get(t.line)!;
+    const left = tokens.slice(0, i).reverse().find((u) => u.line === t.line && u.word)?.word;
+    const right = tokens.slice(i + 1).find((u) => u.line === t.line && u.word)?.word;
+    const lo = left ? left.x1 - 1 : -Infinity;
+    const hi = right ? right.x0 + 1 : Infinity;
+    const cand = words.filter((w) => !used.has(w) && w.text === t.text && Math.abs(mid(w) - y) <= 4 && w.x0 >= lo && w.x1 <= hi);
+    if (cand.length === 1) {
+      t.word = cand[0];
+      used.add(cand[0]);
+    }
+  });
+}
+
+const overlapsY = (a: { y0: number; y1: number }, b: { y0: number; y1: number }) => Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
+
+/** `to: null` drops the line. `kinds` says why it changed: redaction, portion, banner, counter, slug. */
+type Edit = { line: number; from: string; to: string | null; kinds: string[]; remove?: true };
+type Insert = { after: number; text: string; kind?: string; y?: number };
+type PageRecord = { page: number; boxes: number[][]; edits: Edit[]; inserts: Insert[]; unpaired: number };
+
+type Anchors = { prev?: number; next?: number };
+type Pending = {
+  rec: PageRecord;
+  plan: (anchors: Anchors) => { first: number; last: number } | undefined;
+  finish: (anchors: Anchors) => { rec: PageRecord; first?: number; last?: number };
+};
+
+function processPage(page: number, lines: string[]): Pending {
+  const boxes = boxesOn(page);
+  const rec: PageRecord = { page, boxes: boxes.map((b) => [b.x0, b.y0, b.x1, b.y1].map((v) => Math.round((v * 72 * 10) / DPI) / 10)), edits: [], inserts: [], unpaired: 0 };
+  const tokens: Token[] = [];
+  lines.forEach((text, line) => {
+    for (const m of text.matchAll(/\S+/g)) tokens.push({ line, start: m.index!, end: m.index! + m[0].length, text: m[0] });
+  });
+  const words = wordsOn(page);
+  pair(tokens, words);
+  repairPairs(tokens, words);
+  rec.unpaired = tokens.filter((t) => !t.word).length;
+  // The vertical extent of each -layout line, from its paired words.
+  const lineY = new Map<number, { y0: number; y1: number }>();
+  for (const t of tokens) {
+    if (!t.word) continue;
+    const r = lineY.get(t.line);
+    lineY.set(t.line, r ? { y0: Math.min(r.y0, t.word.y0), y1: Math.max(r.y1, t.word.y1) } : { y0: t.word.y0, y1: t.word.y1 });
+  }
+  const marginPt = (leftMargin(tokens) * 72) / DPI;
+  const portionGaps = new Set<number>();
+  // Each character of each line: which box covers it, if any.
+  const covered = new Map<number, (number | undefined)[]>();
+  const placed = new Set<number>();
+  for (const t of tokens) {
+    const wd = t.word;
+    if (!wd) continue;
+    const len = t.end - t.start;
+    const cw = (wd.x1 - wd.x0) / len;
+    boxes.forEach((b, bi) => {
+      const oy = overlapsY(wd, b);
+      if (oy < 0.5 * Math.min(wd.y1 - wd.y0, b.y1 - b.y0)) return;
+      for (let c = 0; c < len; c++) {
+        const cx = wd.x0 + (c + 0.5) * cw;
+        if (cx >= b.x0 && cx <= b.x1) {
+          const row = covered.get(t.line) ?? new Array(lines[t.line].length).fill(undefined);
+          row[t.start + c] = bi;
+          covered.set(t.line, row);
+          placed.add(bi);
+        }
+      }
+    });
+  }
+  // Boxes no character sits in: on a line (between two words), or on a row of their own.
+  const rows: Array<{ after: number; y: number; indent: number }> = [];
+  const gaps = new Map<number, Array<{ at: number; box: number }>>();
+  boxes.forEach((b, bi) => {
+    if (placed.has(bi)) return;
+    const cy = (b.y0 + b.y1) / 2;
+    let best: number | undefined;
+    for (const [line, r] of lineY) if (cy >= r.y0 - 1 && cy <= r.y1 + 1 && (best === undefined || Math.abs((r.y0 + r.y1) / 2 - cy) < Math.abs((lineY.get(best)!.y0 + lineY.get(best)!.y1) / 2 - cy))) best = line;
+    if (best !== undefined) {
+      // the character position: after the last token that ends left of the box
+      const onLine = tokens.filter((t) => t.line === best && t.word);
+      const before = onLine.filter((t) => t.word!.x1 <= b.x0 + 1).pop();
+      const after = onLine.find((t) => t.word!.x0 >= b.x1 - 1);
+      const at = before ? before.end : after ? after.start : lines[best].length;
+      // A box opening the line a little in from the margin, with nothing read before it, is a
+      // portion marking whose struck-through "(TS//" and "//NF)" the OCR lost: "(TS//█//NF)".
+      const xPt = (b.x0 * 72) / DPI;
+      if (!before && xPt > marginPt + 10 && xPt < marginPt + 45) portionGaps.add(best);
+      gaps.set(best, [...(gaps.get(best) ?? []), { at, box: bi }]);
+      placed.add(bi);
+      return;
+    }
+    // A row of its own: after the last line above it that has text.
+    let above = -1;
+    for (const [line, r] of lineY) if (r.y1 <= cy && line > above) above = line;
+    const charW = median(tokens.filter((t) => t.word).map((t) => (t.word!.x1 - t.word!.x0) / (t.end - t.start))) || 6;
+    const indent = Math.max(0, Math.round(b.x0 / charW) - Math.round(leftMargin(tokens) / charW));
+    rows.push({ after: above, y: cy, indent });
+    placed.add(bi);
+  });
+  // Boxes on a row of their own: one inserted line per row (centres within 4 px), marks in x order.
+  rows.sort((a, b) => a.after - b.after || a.y - b.y || a.indent - b.indent);
+  for (let i = 0; i < rows.length; ) {
+    let j = i;
+    let line = "";
+    while (j < rows.length && rows[j].after === rows[i].after && Math.abs(rows[j].y - rows[i].y) <= 4) {
+      const pad = Math.max(line ? 1 : 0, rows[j].indent - line.length);
+      line += " ".repeat(pad) + MARK;
+      j++;
+    }
+    rec.inserts.push({ after: rows[i].after, text: line, y: rows[i].y });
+    i = j;
+  }
+  // Rewrite each touched line.
+  const text = new Map<number, string>();
+  const kinds = new Map<number, Set<string>>();
+  const why = (line: number, kind: string) => kinds.set(line, (kinds.get(line) ?? new Set()).add(kind));
+  const touched = new Set([...covered.keys(), ...gaps.keys()]);
+  for (const line of [...touched].sort((a, b) => a - b)) {
+    const from = lines[line];
+    const row = covered.get(line) ?? [];
+    const ins = (gaps.get(line) ?? []).sort((a, b) => a.at - b.at);
+    let out = "";
+    let prevBox: number | undefined;
+    for (let c = 0; c <= from.length; c++) {
+      for (const g of ins) if (g.at === c) out += (out && !out.endsWith(" ") ? " " : "") + MARK + (c < from.length && from[c] !== " " ? " " : "");
+      if (c === from.length) break;
+      const bi = row[c];
+      if (bi !== undefined) {
+        if (bi !== prevBox) out += MARK;
+        prevBox = bi;
+        continue;
+      }
+      // spaces between two characters of the same box are the box's own
+      if (prevBox !== undefined && from[c] === " ") {
+        let d = c;
+        while (d < from.length && from[d] === " ") d++;
+        if (row[d] === prevBox) {
+          c = d - 1;
+          continue;
+        }
+      }
+      prevBox = undefined;
+      out += from[c];
+    }
+    out = absorbJunk(out);
+    if (out !== from) {
+      text.set(line, out);
+      why(line, "redaction");
+    }
+  }
+  const current = (line: number) => text.get(line) ?? lines[line];
+
+  // Portion markings: "(U)", "(S//NF)", "(TS//█//NF)" opening a paragraph. Classification control
+  // markings, all struck through on declassification; the redacted ones read as garble. A marked
+  // paragraph sets its marking at the margin where an unmarked one indents its first line, so the
+  // paragraph is given the page's usual first-line indent in its place: read as what it is, a
+  // paragraph opening, not a line at an odd inset (which reads as a quotation).
+  const indents = new Map<number, number>();
+  lines.forEach((l, i) => {
+    const lead = l.length - l.trimStart().length;
+    if (l.trim() && i > 0 && !lines[i - 1].trim() && lead >= 8 && lead <= 45) indents.set(lead, (indents.get(lead) ?? 0) + 1);
+  });
+  const usual = [...indents].sort((a, b) => b[1] - a[1])[0];
+  const opening = (lead: string) => (usual && usual[1] >= 2 ? " ".repeat(usual[0]) : lead);
+  lines.forEach((_, line) => {
+    const t = current(line);
+    // (a bulleted paragraph keeps its bullet: "• (TS//[box]//NF) On September 12, 2001, ...")
+    const m = /^(\s*)([•·]\s+)?\(([^()]{0,45})\)\s+(?=\S)/.exec(t);
+    if (m && isPortion(m[3])) {
+      text.set(line, (m[2] ? m[1] + m[2] : opening(m[1])) + t.slice(m[0].length));
+      why(line, "portion");
+    } else if (new RegExp(`^(\\s*)\\(\\s*(?:\\S\\s+)?${MARK}(?:\\s+\\S){0,2}\\s+(?=[A-Z][a-z])`).test(t)) {
+      // the marking's closing parenthesis misread ("( I [box] W j The use of"): one token before the box at
+      // most, two single characters after it, then a capitalised word
+      const g = new RegExp(`^(\\s*)\\(\\s*(?:\\S\\s+)?${MARK}(?:\\s+\\S){0,2}\\s+(?=[A-Z][a-z])`).exec(t)!;
+      text.set(line, opening(g[1]) + t.slice(g[0].length));
+      why(line, "portion");
+    } else if (portionGaps.has(line)) {
+      const g = new RegExp(`^(\\s*)${MARK}\\s+(?=[A-Z"'\u201c])`).exec(t);
+      if (g) {
+        text.set(line, opening(g[1]) + t.slice(g[0].length));
+        why(line, "portion");
+      }
+    }
+  });
+
+  // Furniture: the classification banners at the head and foot of each page, a section's own "Page
+  // N of M" or bare page number above the GPO folio, and the GPO's typesetting slugs.
+  const pt = (px: number) => (px * 72) / DPI;
+  const yMid = (line: number) => {
+    const r = lineY.get(line);
+    return r ? pt((r.y0 + r.y1) / 2) : undefined;
+  };
+  // Narrow bands for garble beside a banner; wide ones for a line that reads as a banner itself (the
+  // views' pages set theirs lower: "SECRET" under "UNCLASSIFIED", PDF p.541).
+  const band = (line: number, wide = false) => {
+    const y = yMid(line);
+    const [top, bottom] = wide ? [TOP_BAND + 20, BOTTOM_BAND - 6] : [TOP_BAND, BOTTOM_BAND];
+    return y === undefined ? undefined : y < top ? "top" : y > bottom ? "bottom" : undefined;
+  };
+  const textLines = [...lineY.keys()].sort((a, b) => a - b);
+  const lowest = textLines.length ? textLines.reduce((a, b) => (yMid(b)! > yMid(a)! ? b : a)) : -1;
+  const drop = new Set<number>();
+  const banners: number[] = [];
+  lines.forEach((_, line) => {
+    const t = current(line);
+    if (SLUG.test(t)) {
+      drop.add(line);
+      why(line, "slug");
+    } else if (pureBanner(t)) {
+      // anywhere on the page, a line that is nothing but a banner (a landscape table's page sets them
+      // aside, and their words may not pair with a position)
+      drop.add(line);
+      why(line, "banner");
+      if (lineY.has(line)) banners.push(line);
+    }
+  });
+  // The letter of transmittal's letterhead (PDF p.2): the committee's members in two columns beside
+  // the Senate's name, which the OCR read as scrambled letters ("RON W YD E.N.M O REG O N"). Everything
+  // above the letter's date goes; PROCESSING.md says so.
+  if (page === 2) {
+    const date = lines.findIndex((l) => /^\s*December 9,\s?2014\s*$/.test(l));
+    for (let line = 0; line < date; line++)
+      if (lines[line].trim()) {
+        drop.add(line);
+        why(line, "letterhead");
+      }
+  }
+  for (const line of textLines) {
+    const t = current(line);
+    if (drop.has(line)) continue;
+    if (!band(line, true)) continue;
+    if (/^\s*Page \d+ of \d+\s*$/.test(t) || (band(line) === "bottom" && /^\s*-\s?\d{1,3}\s?-\s*$/.test(t))) {
+      drop.add(line);
+      why(line, "counter");
+      banners.push(line);
+    } else if (isBanner(t)) {
+      drop.add(line);
+      why(line, "banner");
+      banners.push(line);
+    }
+  }
+  for (const line of textLines) {
+    if (drop.has(line) || !band(line)) continue;
+    const t = current(line).trim();
+    const near = banners.some((b) => Math.abs(yMid(b)! - yMid(line)!) <= 28);
+    if (line === lowest && /^\(?[0-9ivxlcdmIVXLCDM]{1,5}\)?$|^in$/.test(t)) continue; // the GPO folio
+    if (band(line) === "bottom" && /^[0-9]{1,3}$|^[ivxlcIVXLC]{1,6}$/.test(t) && line !== lowest) {
+      drop.add(line);
+      why(line, "counter");
+    } else if (near && wordlike(t) === 0 && !/\d{4}/.test(t)) {
+      drop.add(line);
+      why(line, "banner");
+    }
+  }
+  // Note numbers the OCR lost: a note that opens on a redacted cable's station ("86 █ 10005 (092316Z
+  // APR 02)") prints its number as a tiny superscript against the box, and the layer has no number
+  // (PDF p.54, notes 86 and 88). A line in the notes' size that opens on a box set where a note's text
+  // starts, not under a number line, opens a note; its number is the next in the page's sequence, from
+  // the numbers the layer did read. Inserted as the layer prints the others: alone on a line.
+  const heights = new Map<number, number>();
+  for (const line of textLines) heights.set(line, median(tokens.filter((t) => t.line === line && t.word).map((t) => pt(t.word!.y1 - t.word!.y0))));
+  const firstX = (line: number) => {
+    const t = tokens.find((u) => u.line === line && u.word);
+    return t ? pt(t.word!.x0) : undefined;
+  };
+  // A note's number on a row of its own: raised (under 6.5 pt), or in the notes' size and at the line's
+  // start, where the OCR sized it with its note (p.194, "1007" at 7.2 pt); a folio is centred.
+  const numberLine = (line: number) =>
+    /^\s*\d{1,4}\s*$/.test(lines[line]) && ((heights.get(line) ?? 99) < 6.5 || (/^\d/.test(lines[line]) && (heights.get(line) ?? 0) < 8.6));
+  const noteLines = textLines.filter((l) => (heights.get(l) ?? 99) < 8.6 && !drop.has(l));
+  const noteMargin = Math.min(...textLines.filter(numberLine).map((l) => firstX(l)!).filter((x) => x !== undefined), Infinity);
+  // where a line's words run, in pt
+  const rowX = (line: number) => {
+    const own = tokens.filter((t) => t.line === line && t.word);
+    return own.length ? { x0: pt(Math.min(...own.map((t) => t.word!.x0))), x1: pt(Math.max(...own.map((t) => t.word!.x1))) } : undefined;
+  };
+  const noteRight = Math.max(...noteLines.map((l) => rowX(l)?.x1 ?? 0), 0);
+  type Start = { line: number; n?: number; misread?: boolean; weak?: number; strip?: string };
+  const starts: Start[] = [];
+  // A raised number the OCR read as letters ("so" for 50): short, raised, at the note margin.
+  const misreadNumber = (line: number) =>
+    !numberLine(line) && /^\s*[0-9A-Za-z.,'!|()]{1,5}\s*$/.test(lines[line]) && (heights.get(line) ?? 99) < 6.5 && Math.abs((firstX(line) ?? -99) - noteMargin) <= 3;
+  if (Number.isFinite(noteMargin)) {
+    // (a number row whose word was paired elsewhere has no position: lines, not textLines)
+    const numberRows = [...lines.keys()].filter((l) => !drop.has(l) && numberLine(l) && (lineY.has(l) || /^\d/.test(lines[l])));
+    for (const line of [...new Set([...numberRows, ...textLines.filter(misreadNumber), ...noteLines])].sort((a, b) => a - b)) {
+      if (numberLine(line)) {
+        // a note's number is at the note margin; a raised marker the body set on a row of its own is
+        // not (p.80, "246" above "Pakistan")
+        const x = firstX(line);
+        // (a number at the layout text's first column is at the margin, whatever word it was paired with:
+        // p.194's "1008" paired with the body's raised 1008)
+        if (/^\d/.test(lines[line]) || (x !== undefined && Math.abs(x - noteMargin) <= 3))
+          starts.push({ line, n: Number(lines[line].trim()) });
+        continue;
+      }
+      if (misreadNumber(line)) {
+        starts.push({ line, misread: true });
+        continue;
+      }
+      let prev = line - 1;
+      while (prev >= 0 && !lines[prev].trim()) prev--;
+      // under a number line (one the size test missed too, at the line's start: p.80's "250")
+      if (prev >= 0 && (numberLine(prev) || misreadNumber(prev) || /^\d{1,4}\s*$/.test(lines[prev]))) continue;
+      // where the line starts: its first word, or a box before it
+      const y = yMid(line)!;
+      const xs = [firstX(line), ...boxes.filter((b) => pt(b.y0) - 1 <= y && y <= pt(b.y1) + 1).map((b) => pt(b.x0))].filter((x): x is number => x !== undefined);
+      const startX = Math.min(...xs);
+      if (startX >= noteMargin + 5 && startX <= noteMargin + 16) {
+        starts.push({ line });
+        continue;
+      }
+      if (NO_WEAK) continue;
+      // A note line that starts well in from the margin, under another note's line: a note whose
+      // number and first words the OCR lost against a box (p.115 note 475, "[box] Email from:" read
+      // as "from:" 37 pt in) — weak, as a table-like run-over sets its lines in too.
+      if (startX > noteMargin + 15 && startX <= noteMargin + 80 && prev >= 0 && noteLines.includes(prev)) {
+        starts.push({ line, weak: 0.35 });
+        continue;
+      }
+      if (Math.abs(startX - noteMargin) > 3) continue;
+      // A line at the margin may open a note whose raised number the OCR read as junk glued to the
+      // text ("' \" S e e analysis", "™See", "I2H █ 10424", PDF p.59 notes 123, 127, 128) or lost: a
+      // weak start, numbered only where the page's sequence needs a note there (below).
+      const t = current(line);
+      const stripped = t.replace(JUNK_LEAD, "$1");
+      if (stripped !== t && /^\s*\S/.test(stripped)) {
+        starts.push({ line, weak: 0.3, strip: stripped });
+        continue;
+      }
+      // or a line at the margin after a note line that ends a sentence well short of the column, or
+      // the page's first note line (a note's run-over from the page before, or a note that lost its
+      // number: the page before's last number decides, p.211 "Memorandum for John Rizzo", 1074)
+      const pr = prev >= 0 ? rowX(prev) : undefined;
+      const firstNote = !starts.length && !noteLines.some((l) => l < line);
+      if (((pr && noteLines.includes(prev) && /[.)"”]\s*$/.test(current(prev)) && pr.x1 < noteRight - 40) || firstNote) && /^\s*[A-Z"“]/.test(t))
+        starts.push({ line, weak: 0.45 });
+    }
+  }
+  // The page's notes are numbered in order. Each start's number is the first note's number plus the
+  // starts accepted before it; strong starts are always accepted, a weak one only where the numbers
+  // the OCR read (and the neighbouring pages' last and first numbers) need a note there. The first
+  // number and the weak starts are chosen to agree with the most read numbers, so a lost number is
+  // put back, a misread one ("37" between 26 and 28, "so" for 50, "5" for 51) is corrected, and a
+  // page that lost two numbers (p.59) is not renumbered by an offset the lost starts shifted.
+  const plan = (anchors: { prev?: number; next?: number }) => {
+    if (!starts.length) return undefined;
+    const known = starts.filter((st) => st.n !== undefined).length;
+    const firsts = new Set<number>();
+    starts.forEach((st, i) => {
+      if (st.n !== undefined) for (let j = 0; j <= i; j++) firsts.add(st.n - j);
+    });
+    if (anchors.prev !== undefined) firsts.add(anchors.prev + 1);
+    // A path numbers the accepted starts in order: each the next number, or (SKIP) a read number a
+    // few ahead, where notes the page holds were not found; a read number is not rewritten to fit an
+    // offset that lost starts shifted (p.146: 692 read right, 693 and 694 lost).
+    type Path = { score: number; matches: number; weak: number; numbers: (number | undefined)[] };
+    const better = (a: Path, b: Path | undefined) => !b || a.score > b.score + 1e-9 || (Math.abs(a.score - b.score) < 1e-9 && a.weak < b.weak);
+    let best: { path: Path; score: number } | undefined;
+    for (const s0 of [...firsts].sort((a, b) => a - b)) {
+      if (s0 < 1) continue;
+      // keyed by the last number given (s0 - 1 before the first)
+      let dp = new Map<number, Path>([[s0 - 1, { score: 0, matches: 0, weak: 0, numbers: [] }]]);
+      for (const st of starts) {
+        const nx = new Map<number, Path>();
+        const put = (last: number, p: Path) => better(p, nx.get(last)) && nx.set(last, p);
+        for (const [last, v] of dp) {
+          const first = !v.numbers.some((n) => n !== undefined);
+          const options = [last + 1];
+          // a skip only once the path has kept a number the OCR read: from guesses alone it would follow an anchor
+          if (!first && v.matches > 0 && st.n !== undefined && st.n > last + 1 && st.n - last - 1 <= SKIP_MAX) options.push(st.n);
+          for (const n of options) {
+            const m = st.n === n ? 1 : 0;
+            const skip = (n - last - 1) * SKIP;
+            put(n, { score: v.score + m - skip - (st.weak ?? 0), matches: v.matches + m, weak: v.weak + (st.weak ? 1 : 0), numbers: [...v.numbers, n] });
+          }
+          if (st.weak) put(last, { ...v, numbers: [...v.numbers, undefined] });
+        }
+        dp = nx;
+      }
+      for (const [last, v] of dp) {
+        if (!v.numbers.some((n) => n !== undefined)) continue;
+        let score = v.score;
+        if (anchors.prev !== undefined && s0 === anchors.prev + 1) score += 1;
+        if (anchors.next !== undefined && last + 1 === anchors.next) score += 1;
+        const tie = best && Math.abs(score - best.score) < 1e-9;
+        if (!best || score > best.score + 1e-9 || (tie && (v.matches > best.path.matches || (v.matches === best.path.matches && v.weak < best.path.weak)))) best = { path: v, score };
+      }
+    }
+    if (!best) return undefined;
+    const { matches, numbers } = best.path;
+    if (!((matches >= 2 || (known === 1 && matches === 1)) && matches * 2 > known)) return undefined;
+    const given = numbers.filter((n): n is number => n !== undefined);
+    return { first: given[0], last: given[given.length - 1], numbers };
+  };
+  // A page left as read: its first and last read numbers, where they are in order.
+  const read = () => {
+    const ns = starts.map((st) => st.n).filter((n): n is number => n !== undefined);
+    return ns.length >= 2 && ns.every((n, i) => i === 0 || n > ns[i - 1]) ? { first: ns[0], last: ns[ns.length - 1] } : undefined;
+  };
+  // The rest of the page waits for its neighbours' numbers (main): number the notes, then write the edits.
+  const finish = (anchors: { prev?: number; next?: number }) => {
+    const p = plan(anchors);
+    if (p) {
+      starts.forEach((st, i) => {
+        const n = p.numbers[i];
+        if (n === undefined || st.n === n) return;
+        if (st.n !== undefined || st.misread) {
+          text.set(st.line, current(st.line).replace(/\S+/, String(n)));
+          why(st.line, "note-number");
+          return;
+        }
+        rec.inserts.push({ after: st.line - 1, text: String(n), kind: "note-number" });
+        if (st.strip !== undefined) {
+          text.set(st.line, st.strip);
+          why(st.line, "note-number");
+        }
+      });
+    }
+    // A box on a row of its own beside a dropped banner is the banner's own redaction.
+    rec.inserts = rec.inserts
+      .filter((ins) => ins.y === undefined || !banners.some((b) => Math.abs(yMid(b)! - pt(ins.y!)) <= 8))
+      .map(({ y: _y, ...ins }) => ins);
+    for (const line of [...kinds.keys()].sort((a, b) => a - b))
+      rec.edits.push({ line, from: lines[line], to: drop.has(line) ? null : current(line), kinds: [...kinds.get(line)!], ...(removed.has(line) ? { remove: true } : {}) });
+    const r = read();
+    return { rec, first: p?.first ?? r?.first, last: p?.last ?? r?.last };
+  };
+  // Rows of one printed line: a skewed scan puts the start of a line a point or two off its rest, and
+  // the text layer gives them as two rows ("From Abu" over "Zubaydah's capture on March 28, 2002,",
+  // PDF p.75), so the first reads as a line on its own. Consecutive rows whose words sit on the same
+  // baseline (centres within 5.5 pt; lines are 11 pt apart or more) and side by side (the second starts right of the first's end) are
+  // one line: the second's text goes after the first's, and its row is removed.
+  const removed = new Set<number>();
+  for (let line = 0; line + 1 < lines.length; line++) {
+    const next = line + 1;
+    if (drop.has(line) || drop.has(next) || !current(line).trim() || !current(next).trim()) continue;
+    // a raised note number sits above its note's first line's baseline: not one line with it
+    if ([line, next].some((l) => (heights.get(l) ?? 99) < 6.5 && current(l).trim().length <= 5)) continue;
+    const ya = yMid(line);
+    const yb = yMid(next);
+    const xa = rowX(line);
+    const xb = rowX(next);
+    if (ya === undefined || yb === undefined || !xa || !xb || Math.abs(ya - yb) > 5.5) continue;
+    if (xb.x0 < xa.x1 + 1) continue;
+    const a = current(line).trimEnd();
+    const b = current(next);
+    const gap = Math.max(1, (b.length - b.trimStart().length) - a.length);
+    text.set(line, a + " ".repeat(Math.min(gap, 3)) + b.trim());
+    why(line, "rejoin");
+    removed.add(next);
+    why(next, "rejoin");
+    drop.add(next);
+    line = next;
+  }
+  // The front matter's roman folios, which the OCR reads as "in", "Vlll", "xxvii" for xii: the GPO
+  // numbers PDF p.2 to p.29 continuously, i to xxviii, so each page's folio is its place (as
+  // foliosInStep does for arabic folios). Only a line already reading as a folio is touched.
+  if (page >= 3 && page <= 29) {
+    const last = [...lines.keys()].filter((l) => current(l).trim() && !drop.has(l)).slice(-3).reverse();
+    const folio = last.find((l) => /^\(?[ivxlcIVXLC1l|]{1,7}\)?$|^in$/.test(current(l).trim()));
+    if (folio !== undefined && current(folio).trim() !== roman(page - 1)) {
+      const t = current(folio);
+      text.set(folio, t.slice(0, t.length - t.trimStart().length) + roman(page - 1));
+      why(folio, "folio");
+    }
+  }
+  return { rec, plan: (a: Anchors) => plan(a) ?? read(), finish };
+}
+
+/**
+ * A raised note number the OCR read as junk at the start of a note's first line: tokens of nothing
+ * but punctuation ("' \""), punctuation glued to the first word ("™See"), or a short token mixing
+ * digits and letters ("I2H" for 128). A box (█), "(" and "[" open notes as printed and are not junk.
+ */
+const JUNK_LEAD = /^(\s*)(?:(?:[^A-Za-z0-9\s█(\[]+\s+)+|[^A-Za-z0-9\s█(\["“]+(?=[A-Za-z])|(?=\S*\d)(?=\S*[A-Za-z])[A-Za-z0-9]{2,4}\s+)/;
+const NO_WEAK = args.includes("--no-weak");
+const NO_ANCHORS = args.includes("--no-anchors");
+const SKIP = 0.4; // the cost of each note number a page's numbering steps over
+const SKIP_MAX = 5;
+
+const TOP_BAND = 74; // pt from the top of the page
+const BOTTOM_BAND = 686;
+const SLUG = /VerDate \w+ \d+ \d{4}|\bon DSK\w+PROD with REPORTS\b/;
+
+/** Words of prose: a letter, then two or more lower-case letters. */
+const wordlike = (t: string) => t.split(/\s+/).filter((w) => /^["'(\[]?[A-Za-z][a-z]{2,}[.,;:)\]'"]*$/.test(w)).length;
+
+/** Edit distance from `target` to its best match anywhere in `s`. */
+function fuzzyIn(target: string, s: string): number {
+  let prev = new Array(s.length + 1).fill(0);
+  for (let i = 1; i <= target.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= s.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (target[i - 1] === s[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return Math.min(...prev);
+}
+
+/** A classification banner, struck through and partly redacted: UNCLASSIFIED, TOP SECRET//█//NOFORN. */
+function isBanner(t: string): boolean {
+  const letters = t.toUpperCase().replace(/[^A-Z]/g, "");
+  if (wordlike(t) >= 3) return false;
+  return fuzzyIn("UNCLASSIFIED", letters) <= 4 || fuzzyIn("NOFORN", letters) <= 2 || fuzzyIn("SECRET", letters) <= 1 || /^TOP/.test(letters) && letters.length <= 12;
+}
+
+/** A line of nothing but a classification banner's words, however garbled: "TOPSECRET/D1 //NOFORN". */
+function pureBanner(t: string): boolean {
+  const flat = t.replace(/\[Redacted\]|\u2588/g, "").replace(/\s+/g, "");
+  return wordlike(t) === 0 && flat.replace(/[^A-Za-z]/g, "").length <= 30 && /NOFORN|SECRET|UNCLASSIFIED|OFORN/i.test(flat) && isBanner(t);
+}
+
+/** The inside of a portion marking: U, C, S, S//NF, S//OC/NF, or TS// with its redaction. */
+function isPortion(inner: string): boolean {
+  const d = inner.replace(/\s+/g, "");
+  if (/^(U|C|S|TS)$/.test(d)) return true;
+  if (/^S\/\/[A-Z/]{1,12}$/.test(d)) return true;
+  if (/^T[S&]/.test(d) && !/[a-z]{3}/.test(d) && /[\/^|█]/.test(d) && d.length <= 30) return true;
+  // the marking's middle redacted, its struck-through letters misread: "( █ )", "( ^ S █ i 1 )"
+  if (d.includes(MARK) && d.length <= 30 && new RegExp(`^[A-Z0-9/\\\\|^${MARK}&'!;:.,~\\-ilyVvZz]+$`).test(d)) return true;
+  // any short garble round a box with no run of three lower-case letters: "( r [box] )", "( f [box] F )"
+  return d.includes(MARK) && d.length <= 14 && !/[a-z]{3}/.test(d) && !/\d{3}/.test(d);
+}
+
+/**
+ * A token of nothing but carets and bars beside a mark is the box's own edge, read as glyphs (the OCR
+ * never prints a caret or a bar as text in this report): it goes into the mark.
+ */
+function absorbJunk(line: string): string {
+  const junk = "[\\^|]+";
+  let prev;
+  do {
+    prev = line;
+    line = line.replace(new RegExp(`${MARK}( +)${junk}(?=\\s|$)`, "g"), MARK).replace(new RegExp(`(^|\\s)${junk} +${MARK}`, "g"), `$1${MARK}`);
+  } while (line !== prev);
+  return line;
+}
+
+function popplerVersion(): string {
+  // pdftotext -v prints to stderr
+  const r = spawnSync("pdftotext", ["-v"], { encoding: "utf8" });
+  return (r.stderr || r.stdout).split("\n")[0].trim();
+}
+
+/** Lower-case roman numerals, for front-matter folios. */
+function roman(n: number): string {
+  const parts: Array<[number, string]> = [[40, "xl"], [10, "x"], [9, "ix"], [5, "v"], [4, "iv"], [1, "i"]];
+  let out = "";
+  for (const [v, r] of parts) while (n >= v) (out += r), (n -= v);
+  return out;
+}
+
+/** The last line before `line` with any text, or -1. */
+function prevNonBlank(lines: string[], line: number): number {
+  let k = line - 1;
+  while (k >= 0 && !lines[k].trim()) k--;
+  return k;
+}
+
+function median(xs: number[]): number {
+  if (!xs.length) return 0;
+  const s = [...xs].sort((a, b) => a - b);
+  return s[Math.floor(s.length / 2)];
+}
+
+function leftMargin(tokens: Token[]): number {
+  const firsts = new Map<number, Token>();
+  for (const t of tokens) if (t.word && !firsts.has(t.line)) firsts.set(t.line, t);
+  const xs = [...firsts.values()].map((t) => t.word!.x0 - t.start * ((t.word!.x1 - t.word!.x0) / (t.end - t.start)));
+  return median(xs);
+}
+
+function main() {
+  const raw = execFileSync("pdftotext", ["-layout", "-enc", "UTF-8", pdf, "-"], { encoding: "utf8", maxBuffer: 512 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
+  // as @rtm/ingest's extractPages: split on form feeds; C0 controls become spaces
+  const pages = raw.split("\f").map((p) => p.split("\n").map((l) => l.replace(/[\u0000-\u0008\u000b\u000d-\u001f]/g, " ")));
+  const total = pages.length - (pages[pages.length - 1].every((l) => !l.trim()) ? 1 : 0);
+  const pending = new Map<number, Pending>();
+  for (let p = 1; p <= total; p++) {
+    if (ONLY && !ONLY.includes(p)) continue;
+    pending.set(p, processPage(p, pages[p - 1]));
+    if (p % 50 === 0) process.stderr.write(`page ${p}/${total}\n`);
+  }
+  // Note numbers run on from page to page within a part: a page's numbering is checked against the
+  // last number of the page before and the first of the page after (each numbered on its own first),
+  // where those are within a few notes of it (a part's notes restart at 1).
+  let alone = new Map<number, { first: number; last: number }>();
+  for (const [p, pend] of pending) {
+    const r = pend.plan({});
+    if (r) alone.set(p, r);
+  }
+  const near = (p: number, step: number) => {
+    for (let q = p + step, i = 0; i < 3; i++, q += step) if (alone.has(q)) return alone.get(q);
+    return undefined;
+  };
+  const anchorsOf = (p: number): Anchors => {
+    const own = alone.get(p);
+    const anchors: Anchors = {};
+    if (!own || NO_ANCHORS) return anchors;
+    const before = near(p, -1);
+    const after = near(p, 1);
+    if (before && Math.abs(before.last + 1 - own.first) <= 8) anchors.prev = before.last;
+    if (after && Math.abs(after.first - (own.last + 1)) <= 8) anchors.next = after.first;
+    return anchors;
+  };
+  // A page's tail can need the next page's first number and that page the tail's last: two rounds.
+  for (let round = 0; round < 2 && !NO_ANCHORS; round++) {
+    const next = new Map<number, { first: number; last: number }>();
+    for (const [p, pend] of pending) {
+      const r = pend.plan(anchorsOf(p));
+      if (r) next.set(p, r);
+    }
+    alone = next;
+  }
+  const records: PageRecord[] = [];
+  const numbered = new Map<number, { first?: number; last?: number }>();
+  for (const [p, pend] of pending) {
+    const { rec, first, last } = pend.finish(anchorsOf(p));
+    numbered.set(p, { first, last });
+    if (rec.boxes.length || rec.edits.length || rec.inserts.length) records.push(rec);
+  }
+  // The check: each numbered page should start where the numbered page before it ended.
+  let outOfStep = 0;
+  let missing = 0;
+  let prevLast: number | undefined;
+  for (const [p, { first, last }] of [...numbered].sort((a, b) => a[0] - b[0])) {
+    if (first === undefined || last === undefined) continue;
+    if (prevLast !== undefined && first !== prevLast + 1 && Math.abs(first - (prevLast + 1)) <= 8) {
+      outOfStep++;
+      if (first > prevLast + 1) missing += first - prevLast - 1;
+      if (process.env.NOTE_CHECK_VERBOSE) process.stderr.write(`p.${p}: first note ${first}, page before ended ${prevLast}\n`);
+    }
+    prevLast = last;
+  }
+  process.stderr.write(`note sequence: ${numbered.size} pages, ${outOfStep} out of step with the page before, ${missing} numbers missing between pages\n`);
+  const pack = {
+    pdf: "archive/CRPT-113srpt288.pdf",
+    sha256: createHash("sha256").update(readFileSync(pdf)).digest("hex"),
+    poppler: popplerVersion(),
+    dpi: DPI,
+    params: { open: OPEN, minHeight: MIN_H, minWidth: MIN_W, minFill: MIN_FILL, dark: DARK },
+    mark: MARK,
+    pages: records,
+  };
+  mkdirSync(dirname(OUT), { recursive: true });
+  const json = JSON.stringify(pack);
+  writeFileSync(OUT, OUT.endsWith(".gz") ? gzipSync(json, { level: 9 }) : json);
+  const boxes = records.reduce((n, r) => n + r.boxes.length, 0);
+  const edits = records.reduce((n, r) => n + r.edits.length, 0);
+  const inserts = records.reduce((n, r) => n + r.inserts.length, 0);
+  const unpaired = records.reduce((n, r) => n + r.unpaired, 0);
+  process.stderr.write(`${records.length} pages with boxes, ${boxes} boxes, ${edits} lines edited, ${inserts} lines inserted, ${unpaired} tokens unpaired → ${OUT}\n`);
+}
+
+main();

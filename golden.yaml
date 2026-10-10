@@ -1,0 +1,117 @@
+# Golden pages: ground truth for this report, read off the PDF page image and checked by `pnpm ingest verify`.
+# Format and rules: @rtm/ingest src/golden.ts and the site's docs/quality-harness.md ("Golden pages").
+# A page marked xfail is a known pipeline defect: it stays red here, verify stays green, and the bead says why.
+# The source is a scan with an OCR layer. A redaction box is served as "[Redacted]" (redactions.ts), so these
+# entries write it that way; classification banners, portion markings and "Page N of 499" never reach the text.
+pages:
+  # The Executive Summary's part II opens: three outline headings over two and three lines each, one ending on a
+  # box, then paragraphs with page notes. Marker 8 is printed raised but the OCR read it as "K"; and the third
+  # paragraph runs on after a box that opens a line ("[Redacted] sent an email describing"), which the pipeline
+  # took for a new paragraph.
+  - pdf: 40
+    printed: 11
+    verified_by: "Claude (Opus 5.5), 2026-10-10, against the page image"
+    xfail: reportsthatmatter-jc46
+    xfail_only: [blocks, markers]
+    blocks:
+      - heading: "II. Overall History and Operation of the CIA's Detention and Interrogation Program"
+        level: 2
+      - heading: "A. September 17, 2001, Memorandum of Notification (MON) Authorizes the CIA to Capture and Detain a Specific Category of Individuals"
+        level: 3
+      - heading: "1. After Considering Various Clandestine Detention Locations, the CIA Determines That a U.S. Military Base Is the \"Best Option\"; the CIA Delegates \"Blanket\" Detention Approvals to CIA Officers in [Redacted]"
+        level: 4
+      - paragraph: {start: "On September 17, 2001, six days", end: "to interrogations or interrogation techniques.", notes: [7, 8, 9]}
+      - paragraph: {start: "On September 14, 2001, three days", end: "least three proposed site locations.", notes: [10, 11]}
+      - paragraph: {start: "On September 26, 2001, senior CTC", continues: true}
+    footnotes: [7, 8, 9, 10, 11]
+    markers: [7, 8, 9, 10, 11]
+    must_not_contain: ["Page 11 of 499", "NOFORN", "UNCLASSIFIED"]
+  # A body page dense with redactions: four portion-marked paragraphs ("(TS//[box]//NF)", struck through), boxes
+  # inside sentences, and eight notes, several opening on a box. Marker 68 is OCR'd as "( , 6 8".
+  - pdf: 51
+    printed: 22
+    verified_by: "Claude (Opus 5.5), 2026-10-10, against the page image"
+    xfail: reportsthatmatter-fgle
+    xfail_only: [markers]
+    blocks:
+      - paragraph: {start: "On the day that Abu Zubaydah", end: "the criminal prohibition on torture.", notes: [61, 62]}
+      - paragraph: {start: "In late March 2002, anticipating its", end: "and reportable up the line.\"", notes: [63, 64, 65]}
+      - paragraph: {start: "Over the course of four days,", end: "what the impact would be.\"", notes: [66, 67]}
+      - paragraph: {start: "The decision to detain Abu Zubaydah", continues: true}
+    footnotes: [61, 62, 63, 64, 65, 66, 67, 68]
+    markers: [61, 62, 63, 64, 65, 66, 67, 68]
+    must_read: ["Rendition to Country [Redacted] was rejected", "military custody [Redacted] in large part"]
+    must_not_contain: ["TOP SECRET", "NOFORN", "Page 22 of 499"]
+  # Findings and Conclusions: a numbered finding set as a bold paragraph ("#12: ..."), and endnote markers
+  # (the findings' notes are printed at their end, PDF pp. 28-29). Marker 29 is OCR'd as "( , 2 9".
+  - pdf: 20
+    printed: "xxvii"
+    verified_by: "Claude (Opus 5.5), 2026-10-10, against the page image"
+    xfail: reportsthatmatter-fgle
+    xfail_only: [blocks, markers]
+    blocks:
+      - paragraph: {start: "As it began detention and interrogation", end: "been detained by the CIA."}
+      - paragraph: {start: "#12: The CIA's management and operation", end: "in 2002 and early 2003."}
+      - paragraph: {start: "The CIA's COBALT detention facility in", end: "techniques were not used there."}
+      - paragraph: {start: "Although CIA Director Tenet in January", end: "at multiple detention sites in Country [Redacted]"}
+      - paragraph: {start: "Divergent lines of authority for interrogation", end: "of each other's interrogation practices."}
+      - paragraph: {start: "The CIA placed individuals with no", end: "persisted throughout the program."}
+    markers: [29, 30]
+    must_not_contain: ["Page 10 of 19"]
+  # The first of the additional views: its title a part heading (from the report's contents, PDF p.3), nine
+  # paragraphs, no notes.
+  - pdf: 529
+    printed: 500
+    verified_by: "Claude (Opus 5.5), 2026-10-10, against the page image"
+    blocks:
+      - heading: "Additional Views of Senator Rockefeller"
+        level: 2
+      - paragraph: {start: "The Senate Intelligence Committee's entire Study", end: "be addressed at the CIA,"}
+      - paragraph: {start: "Moreover, this Study exemplifies why this", end: "landmark initiative to this point."}
+      - paragraph: {start: "It is my hope and expectation", end: "that this never happens again."}
+      - paragraph: {start: "It has been a long, hard", end: "all - about the program."}
+      - paragraph: {start: "The Committee's Study of the Detention", end: "way, from our core principles."}
+      - paragraph: {start: "One of the profound ways that", end: "program during the same period."}
+      - paragraph: {start: "As a matter of my own", end: "other members from my staff."}
+      - paragraph: {start: "It was clear that the briefings", end: "they had \"fully briefed Congress.\""}
+      - paragraph: {start: "In the years that followed, I", continues: true}
+    markers: []
+    must_not_contain: ["UNCLASSIFIED"]
+  # The minority views: "(U)" portion markings, a bold run-in subheading ("Conclusion 2 (CIA's Justification for
+  # EITs Rested on Inaccurate Effectiveness Claims)") that the pipeline reads as a paragraph, two page notes, and
+  # the views' own page number "VII" above the GPO folio. The page opens mid-sentence, which the pipeline did
+  # not join to the page before (reportsthatmatter-jc46).
+  - pdf: 560
+    printed: 531
+    verified_by: "Claude (Opus 5.5), 2026-10-10, against the page image"
+    continues_previous: true
+    opens_with: "who were not subjected to enhanced"
+    xfail: reportsthatmatter-u7zu
+    xfail_only: [blocks, opens]
+    blocks:
+      - paragraph: {start: "The final faulty premise used in", end: "view—Directors Tenet, Goss, and Hayden.", notes: [21]}
+      - heading: "Conclusion 2 (CIA's Justification for EITs Rested on Inaccurate Effectiveness Claims)"
+        level: 3
+      - paragraph: {start: "Conclusion 2 states, \"[t]he CIA's justification", end: "and sometimes prosecute other terrorists.", notes: [22]}
+      - paragraph: {start: "The Study developed an analytical methodology", end: "relative effectiveness of the Program."}
+      - paragraph: {start: "Instead of performance metrics, the Study's", continues: true}
+    footnotes: [21, 22]
+    markers: [21, 22]
+    must_not_contain: ["(U) The final", "NOFORN"]
+  # Notes whose numbers the OCR lost or misread (reportsthatmatter-fgle): 123 read as "' \"" glued to its text,
+  # 127 as "™" glued to "See", 128 as "I2H" before a box. The page vote this pack used to number notes by took
+  # 122 as the offset from the three numbers after the lost 123 and renumbered the correct 121 and 122.
+  - pdf: 59
+    printed: 30
+    verified_by: "Claude (Opus 5.5), 2026-10-10, against the page image"
+    footnotes: [121, 122, 123, 124, 125, 126, 127, 128]
+    markers: [121, 122, 123, 124, 125, 126, 127, 128]
+    must_not_contain: ["Page 30 of 499", "NOFORN"]
+  # A page whose note numbers the OCR sized with their notes (7.2 pt, not raised), one of them ("1008") paired
+  # with the body's raised 1008, and five notes opening on a box with no number read (1009-1013).
+  - pdf: 194
+    printed: 165
+    verified_by: "Claude (Opus 5.5), 2026-10-10, against the page image"
+    footnotes: [1007, 1008, 1009, 1010, 1011, 1012, 1013]
+    markers: [1007, 1008, 1009, 1010, 1011, 1012, 1013]
+    must_not_contain: ["Page 165 of 499", "NOFORN"]
