@@ -16,22 +16,39 @@ export default pipeline({
     { path: "archive/CRPT-113srpt288.pdf", sha256: "4989f2fb14509322dfb22d3e90ed5b569bc653aba25826da7adb8da7c8090bb3" },
   ],
   passes: [
-    // The redactions, read off the page images (scripts/redaction-boxes.ts): each printed black box is
-    // one mark, U+2588, where the OCR read garble ("Country |", "B I H I H") or nothing; the
-    // classification banners, portion markings, "Page 21 of 499" and GPO slugs come off (PDF p.51).
+    // The page images, read once (scripts/redaction-boxes.ts) and applied to the text layer before
+    // anything reads a page: each printed black box is one redaction, written "[Redacted]", where the
+    // OCR read garble ("Country |", "B I H I H") or nothing (PDF p.51); the struck classification banners,
+    // portion markings "(TS//[box]//NF)", "Page 22 of 499" and GPO slugs come off (every page); note numbers
+    // the OCR lost against a box or misread are put back from the page's sequence (p.54: 86, 88; p.48:
+    // "so" for 50); rows of one printed line a skewed scan split are rejoined (p.75); the front matter's
+    // roman folios are set from their place (p.4 "in" for iii).
     redactionBoxes({
       dir: import.meta.dirname,
       pack: { path: "reference/redactions.json.gz", sha256: "61872b01b571983d7a323514d8a8d466f4909013211dc00ba8f80eaa3b1650d1" },
       pdfSha256: "4989f2fb14509322dfb22d3e90ed5b569bc653aba25826da7adb8da7c8090bb3",
     }),
+    // A paragraph run over a page break joins when the layout says it runs on; the OCR layer sizes
+    // consecutive lines a point apart (as Jack Smith's scan).
     layoutPageJoins({ scanned: true }),
+    // The scan is skewed: a page's first line can be inset, and read as a quotation (p.75).
     pageBreakContinuations(),
+    // A folio the OCR misread out of step with its neighbours is dropped and numbered from them.
     foliosInStep(),
+    // Note markers are raised digits in the OCR layer's own size (p.40: "techniques.9").
     layoutMarkers(),
+    // A note opening after a wide gap or on OCR junk starts its note (p.51 notes 61-68).
     sequencedNoteOpenings(),
+    // The front matter is folioed i to xxviii (PDF pp.2-29).
     romanFolios(),
+    // Headings from the two contents (the GPO's, PDF p.3, for the parts; the Executive Summary's, pp.31-36,
+    // for its I./A./1. outline), both OCR'd and without leaders, matched by edit distance; an unlisted
+    // centred heading (the minority views' "CONCLUSION") is a subhead.
     contentsOutline({ ocr: true, centredMinor: true }),
+    // Single-spaced pages: a note's tail over a page break is the note's when the layout sets it in the
+    // notes' face (p.69, note 178).
     noteFaceRunOver(),
+    // The findings open "#1:" ... "#20:" (p.12), which would read as Markdown headings.
     escapeLeadingHash(),
   ],
 });
