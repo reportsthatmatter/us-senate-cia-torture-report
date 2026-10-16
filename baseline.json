@@ -1,11 +1,11 @@
 {
-  "markdownSha": "1fbec9e51702d046544c044bf58dd04d717ac258750d0b57c5aa1530e2260b22",
-  "words": 396764,
+  "markdownSha": "14b6b8c9e9be197e34c6ccc22b2699f455cdcb1a2465df9a70693ce268949028",
+  "words": 396635,
   "blocks": {
     "heading": 150,
-    "quote": 613,
+    "quote": 484,
     "list": 311,
-    "paragraph": 2329
+    "paragraph": 2328
   },
   "headings": [
     "REPORT",

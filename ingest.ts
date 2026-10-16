@@ -1,5 +1,5 @@
 import { redactionBoxes } from "./redactions.ts";
-import { layoutPageJoins, layoutMarkers, pageBreakContinuations, foliosInStep, pipeline, sequencedNoteOpenings, romanFolios, contentsOutline, escapeLeadingHash, noteFaceRunOver } from "@rtm/ingest";
+import { layoutPageJoins, layoutMarkers, pageBreakContinuations, foliosInStep, pipeline, sequencedNoteOpenings, romanFolios, contentsOutline, escapeLeadingHash, noteFaceRunOver, quoteListRunOns, hangingLabels, insetOpenings } from "@rtm/ingest";
 
 /**
  * How this report is built. Owned by the report: every decision that shaped
@@ -50,5 +50,15 @@ export default pipeline({
     noteFaceRunOver(),
     // The findings open "#1:" ... "#20:" (p.12), which would read as Markdown headings.
     escapeLeadingHash(),
+    // A quotation running over a page arrives as two; the second, opening in lower case, is the rest of the
+    // first (p.18, "To me it is an abomination, and I" / "am happy to say...").
+    quoteListRunOns(),
+    // The minority views set each "Study Claim:" and "Fact:" with its lines hanging in from the label; read as a
+    // quotation cut from the label's line without it (p.589). The labels are named: a box or OCR junk after one
+    // can close up the gap (p.581).
+    hangingLabels({ labels: ["Study Claim", "Fact"] }),
+    // A paragraph's first lines pushed in from the margin by a redaction box (p.54), a struck portion marking's
+    // residue (p.61) or a skew-split first line (p.128) read as a short quotation; the rest opens in lower case.
+    insetOpenings(),
   ],
 });

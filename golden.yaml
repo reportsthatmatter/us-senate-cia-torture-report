@@ -115,3 +115,27 @@ pages:
     footnotes: [1007, 1008, 1009, 1010, 1011, 1012, 1013]
     markers: [1007, 1008, 1009, 1010, 1011, 1012, 1013]
     must_not_contain: ["Page 165 of 499", "NOFORN"]
+  # A block quotation over a page break (Hart's testimony, pp.18-19): the second page's lines open in lower case
+  # and are the rest of the quotation (quoteListRunOns, reportsthatmatter-jc46).
+  - pdf: 47
+    printed: 18
+    verified_by: "Claude (Opus 5.5), 2026-10-16, against the page image"
+    must_contain: ["To me it is an abomination, and I am happy to say"]
+    must_be_quote: ["It has never fallen to my lot to be involved"]
+  # A paragraph whose first two lines a redaction box at the margin pushes in, so they read as a quotation cut off
+  # from the rest ("[box] being involved in any aspect" / "inspector general, the detention"; insetOpenings, jc46).
+  - pdf: 83
+    printed: 54
+    verified_by: "Claude (Opus 5.5), 2026-10-16, against the page image"
+    must_contain: ["According to the CIA inspector general, the detention and interrogation of Ridha al-Najjar"]
+    must_not_be_quote: ["being involved in any aspect of the interrogation of al-Najjar"]
+  # The minority views' "Study Claim:" and "Fact:" items, each set with its lines hanging in from the label and
+  # read as a quotation cut from the label's line (hangingLabels, jc46). Each is one paragraph, label and all.
+  - pdf: 618
+    printed: 589
+    verified_by: "Claude (Opus 5.5), 2026-10-16, against the page image"
+    must_contain:
+      - "Study Claim: [Redacted] \"A review of CIA records found no connection between Abu Zubaydah's reporting"
+      - "CIA records demonstrate that Abu Zubaydah was subjected to enhanced interrogation techniques during two separate"
+    must_not_be_quote: ["between Abu Zubaydah's reporting on Ramzi bin al-Shibh", "was subjected to enhanced interrogation techniques during two separate"]
+    must_not_contain: ["TOP SECRET", "NOFORN"]
