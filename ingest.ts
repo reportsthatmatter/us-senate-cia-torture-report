@@ -35,8 +35,10 @@ export default pipeline({
     pageBreakContinuations(),
     // A folio the OCR misread out of step with its neighbours is dropped and numbered from them.
     foliosInStep(),
-    // Note markers are raised digits in the OCR layer's own size (p.40: "techniques.9").
-    layoutMarkers(),
+    // Note markers are raised digits in the OCR layer's own size (p.40: "techniques.9"). The Findings and
+    // Conclusions (PDF pp.11-29) print their notes 1-46 together on their last two pages (pp.28-29), not at
+    // each page's foot: a marker there cites a note anywhere in the Findings.
+    layoutMarkers({ endnoteRanges: [{ from: 11, to: 29 }] }),
     // A note opening after a wide gap or on OCR junk starts its note (p.51 notes 61-68).
     sequencedNoteOpenings(),
     // The front matter is folioed i to xxviii (PDF pp.2-29).
